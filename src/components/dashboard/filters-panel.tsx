@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { TrialFilters, Gender } from '@/services/clinical-trials';
@@ -17,6 +18,8 @@ interface FiltersPanelProps {
   adverseEvents: string[];
   pgaScores: number[];
 }
+
+const PLACEHOLDER_SELECT_ITEM_VALUE = "__placeholder__";
 
 export function FiltersPanel({
   filters,
@@ -45,14 +48,14 @@ export function FiltersPanel({
             </Label>
             <Select
               value={filters.trialCenter || ''}
-              onValueChange={(value) => onFilterChange('trialCenter', value || undefined)}
+              onValueChange={(value) => onFilterChange('trialCenter', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
               disabled={isLoading}
             >
               <SelectTrigger id="trialCenter">
                 <SelectValue placeholder="All Centers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Centers</SelectItem>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>All Centers</SelectItem>
                 {trialCenters.map((center) => (
                   <SelectItem key={center} value={center}>
                     {center}
@@ -69,14 +72,14 @@ export function FiltersPanel({
             </Label>
             <Select
               value={filters.gender || ''}
-              onValueChange={(value) => onFilterChange('gender', value as Gender || undefined)}
+              onValueChange={(value) => onFilterChange('gender', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value as Gender)}
               disabled={isLoading}
             >
               <SelectTrigger id="gender">
                 <SelectValue placeholder="All Genders" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Genders</SelectItem>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>All Genders</SelectItem>
                 {genders.map((gender) => (
                   <SelectItem key={gender} value={gender}>
                     {gender}
@@ -93,14 +96,14 @@ export function FiltersPanel({
             </Label>
             <Select
               value={filters.adverseEvent || ''}
-              onValueChange={(value) => onFilterChange('adverseEvent', value || undefined)}
+              onValueChange={(value) => onFilterChange('adverseEvent', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
               disabled={isLoading}
             >
               <SelectTrigger id="adverseEvent">
                 <SelectValue placeholder="Any Event" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Event</SelectItem>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>Any Event</SelectItem>
                 {adverseEvents.map((event) => (
                   <SelectItem key={event} value={event}>
                     {event}
@@ -117,14 +120,21 @@ export function FiltersPanel({
             </Label>
             <Select
               value={filters.pga?.toString() || ''}
-              onValueChange={(value) => onFilterChange('pga', value ? parseInt(value) : undefined)}
+              onValueChange={(value) => {
+                if (value === PLACEHOLDER_SELECT_ITEM_VALUE) {
+                  onFilterChange('pga', undefined);
+                } else {
+                  const numericValue = parseInt(value);
+                  onFilterChange('pga', isNaN(numericValue) ? undefined : numericValue);
+                }
+              }}
               disabled={isLoading}
             >
               <SelectTrigger id="pga">
                 <SelectValue placeholder="Any Score" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Score</SelectItem>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>Any Score</SelectItem>
                 {pgaScores.map((score) => (
                   <SelectItem key={score} value={score.toString()}>
                     {score}
