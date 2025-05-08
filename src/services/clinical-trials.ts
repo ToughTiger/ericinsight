@@ -207,6 +207,17 @@ export async function getTrialData(filters: TrialFilters): Promise<TrialData[]> 
 }
 
 /**
+ * Asynchronously retrieves a single patient's data by their ID.
+ * @param patientId The ID of the patient to retrieve.
+ * @returns A promise that resolves to a TrialData object or undefined if not found.
+ */
+export async function getPatientById(patientId: string): Promise<TrialData | undefined> {
+  await new Promise(resolve => setTimeout(resolve, 200)); // Simulate API call delay
+  return allTrialData.find(patient => patient.patientId === patientId);
+}
+
+
+/**
  * Retrieves a list of unique trial center names.
  * @returns A promise that resolves to an array of strings.
  */
@@ -248,3 +259,4 @@ export async function getPgaScoreOptions(): Promise<number[]> {
   const scores = new Set(allTrialData.map(item => item.pga.score));
   return Array.from(scores).sort((a, b) => a - b);
 }
+
