@@ -36,7 +36,7 @@ export function PatientDetailView({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="sm:max-w-2xl max-h-[100vh] flex flex-col overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center text-2xl">
             <UserCircle className="mr-2 h-7 w-7 text-primary" />
@@ -47,7 +47,7 @@ export function PatientDetailView({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-0"> 
+        <ScrollArea className="flex-1 min-h-max overflow-y-auto"> 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
             <div>
               <h3 className="font-semibold text-lg mb-2 flex items-center">
@@ -129,12 +129,12 @@ export function PatientDetailView({
             </Card>
           </div>
         </ScrollArea>
-
+{/* 
         <DialogFooter className="px-6 pt-4 pb-6 border-t">
           <Button onClick={() => onOpenChange(false)} variant="outline">
             Close
           </Button>
-        </DialogFooter>
+        </DialogFooter> */}
       </DialogContent>
     </Dialog>
   );

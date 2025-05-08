@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Trial Insights',
-  description: 'Clinical Trial Dashboard by Firebase Studio',
+  title: 'Eric Insights',
+  description: 'Clinical Trial Dashboard by Eric Solutions',
 };
 
 export default function RootLayout({
