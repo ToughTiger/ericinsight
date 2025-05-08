@@ -63,7 +63,7 @@ export function PatientDetailView({
                 <Users className="mr-2 h-5 w-5 text-primary" /> Demographics
               </h3>
               <div className="space-y-2 text-sm">
-                <p><strong>Gender:</strong> <Badge variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'}>{patient.gender}</Badge></p>
+                <div className="flex items-center"><strong>Gender:</strong> <Badge variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'} className="ml-1">{patient.gender}</Badge></div>
                 <p><strong>Age:</strong> {patient.demographics.age} years</p>
                 <p><strong>Race:</strong> {patient.demographics.race}</p>
                 <p><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</p>
@@ -77,7 +77,7 @@ export function PatientDetailView({
                 <ShieldCheck className="mr-2 h-5 w-5 text-primary" /> PGA Assessment
               </h3>
               <div className="space-y-2 text-sm">
-                <p><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground">{patient.pga.score}</Badge></p>
+                <div className="flex items-center"><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground ml-1">{patient.pga.score}</Badge></div>
                 <p><strong>Description:</strong> {patient.pga.description}</p>
               </div>
             </div>
