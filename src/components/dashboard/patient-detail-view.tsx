@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { TrialData } from '@/services/clinical-trials';
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity } from 'lucide-react';
 
 interface PatientDetailViewProps {
@@ -45,8 +47,8 @@ export function PatientDetailView({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1"> 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 pr-6"> {/* Added pr-6 to content div to compensate for scrollbar */}
+        <ScrollArea className="flex-1 min-h-0"> 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 pr-6">
             <div>
               <h3 className="font-semibold text-lg mb-2 flex items-center">
                 <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial Information
@@ -63,10 +65,9 @@ export function PatientDetailView({
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
-                  <strong>Gender:</strong> 
+                  <strong className="mr-1">Gender:</strong> 
                   <Badge 
                     variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'} 
-                    className="ml-1"
                   >
                     {patient.gender}
                   </Badge>
@@ -106,26 +107,30 @@ export function PatientDetailView({
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <h3 className="font-semibold text-lg mb-3 flex items-center">
-                <Lightbulb className="mr-2 h-5 w-5 text-primary" /> AI Insights for this Patient
-              </h3>
-              {isLoadingSummary ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ) : aiSummary ? (
-                <p className="text-sm text-foreground/90 whitespace-pre-wrap bg-primary/5 p-3 rounded-md border border-primary/20">{aiSummary}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">No AI summary available for this patient.</p>
-              )}
-            </div>
+            <Card className="md:col-span-2 shadow-md bg-primary/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg text-primary">
+                  <Lightbulb className="mr-2 h-5 w-5" /> AI Insights for this Patient
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSummary ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ) : aiSummary ? (
+                  <p className="text-sm text-foreground/90 whitespace-pre-wrap">{aiSummary}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No AI summary available for this patient.</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </ScrollArea>
 
-        <DialogFooter className="pt-4 border-t"> {/* Removed mt-auto as flex-1 on ScrollArea handles space distribution */}
+        <DialogFooter className="pt-4 border-t">
           <Button onClick={() => onOpenChange(false)} variant="outline">
             Close
           </Button>
