@@ -48,7 +48,8 @@ export function PatientDetailView({
         </DialogHeader>
         
         <ScrollArea className="flex-1 min-h-0"> 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 pr-6">
+          {/* Changed pr-6 to p-4 for consistent padding around scrollable content */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
             <div>
               <h3 className="font-semibold text-lg mb-2 flex items-center">
                 <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial Information
