@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Lightbulb, UserCircle, MapPin, Activity, ShieldCheck, FlaskConical } from 'lucide-react';
+import { Lightbulb, UserCircle, MapPin, Activity, ShieldCheck, FlaskConical, Users } from 'lucide-react';
 
 interface PatientDetailViewProps {
   patient: TrialData | null;
@@ -50,12 +50,25 @@ export function PatientDetailView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
             <div>
               <h3 className="font-semibold text-lg mb-2 flex items-center">
-                <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial & Demographics
+                <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial Information
               </h3>
               <div className="space-y-2 text-sm">
                 <p><strong>Trial Center:</strong> {patient.trialCenter.name}</p>
                 <p><strong>Location:</strong> {patient.trialCenter.location}</p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-lg mb-2 flex items-center">
+                <Users className="mr-2 h-5 w-5 text-primary" /> Demographics
+              </h3>
+              <div className="space-y-2 text-sm">
                 <p><strong>Gender:</strong> <Badge variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'}>{patient.gender}</Badge></p>
+                <p><strong>Age:</strong> {patient.demographics.age} years</p>
+                <p><strong>Race:</strong> {patient.demographics.race}</p>
+                <p><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</p>
+                {patient.demographics.height && <p><strong>Height:</strong> {patient.demographics.height} cm</p>}
+                {patient.demographics.weight && <p><strong>Weight:</strong> {patient.demographics.weight} kg</p>}
               </div>
             </div>
 

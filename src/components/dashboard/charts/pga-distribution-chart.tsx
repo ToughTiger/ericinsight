@@ -9,6 +9,7 @@ import { TrendingUp } from 'lucide-react';
 
 interface PgaDistributionChartProps {
   data: TrialData[];
+  onScoreSelect?: (score: number) => void;
 }
 
 const chartConfig = {
@@ -18,7 +19,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function PgaDistributionChart({ data }: PgaDistributionChartProps) {
+export function PgaDistributionChart({ data, onScoreSelect }: PgaDistributionChartProps) {
   const pgaCounts = data.reduce((acc, trial) => {
     const score = trial.pga.score;
     acc[score] = (acc[score] || 0) + 1;
@@ -26,11 +27,12 @@ export function PgaDistributionChart({ data }: PgaDistributionChartProps) {
   }, {} as Record<number, number>);
 
   const chartData = Object.entries(pgaCounts)
-    .map(([score, count]) => ({
-      score: `PGA ${score}`,
+    .map(([scoreStr, count]) => ({
+      scoreKey: `PGA ${scoreStr}`, // For XAxis display
+      originalScore: parseInt(scoreStr), // Actual numeric score
       count,
     }))
-    .sort((a, b) => parseInt(a.score.split(' ')[1]) - parseInt(b.score.split(' ')[1]));
+    .sort((a, b) => a.originalScore - b.originalScore);
 
   if (chartData.length === 0) {
     return (
@@ -56,21 +58,31 @@ export function PgaDistributionChart({ data }: PgaDistributionChartProps) {
           <TrendingUp className="mr-2 h-5 w-5 text-primary" />
           PGA Score Distribution
         </CardTitle>
-        <CardDescription>Distribution of Patient Global Assessment scores.</CardDescription>
+        <CardDescription>Distribution of Patient Global Assessment scores. Click a bar to filter.</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="score" tickLine={false} axisLine={false} tickMargin={8} />
+              <XAxis dataKey="scoreKey" tickLine={false} axisLine={false} tickMargin={8} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} tickMargin={8} />
               <Tooltip
-                cursor={false}
+                cursor={onScoreSelect ? { fill: 'hsl(var(--muted))' } : false}
                 content={<ChartTooltipContent hideLabel />}
               />
               <Legend />
-              <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+              <Bar 
+                dataKey="count" 
+                fill="var(--color-count)" 
+                radius={4} 
+                onClick={(dataPoint) => {
+                  if (onScoreSelect && dataPoint && dataPoint.originalScore !== undefined) {
+                    onScoreSelect(dataPoint.originalScore);
+                  }
+                }}
+                style={{ cursor: onScoreSelect ? 'pointer' : 'default' }}
+              />
             </RechartsBarChart>
           </ResponsiveContainer>
         </ChartContainer>

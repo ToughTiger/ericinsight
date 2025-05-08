@@ -47,6 +47,17 @@ export interface PGA {
 }
 
 /**
+ * Represents demographic information for a patient.
+ */
+export interface Demographics {
+  age: number; // years
+  race: 'Caucasian' | 'African American' | 'Asian' | 'Hispanic' | 'Other' | 'Unknown';
+  ethnicity: 'Hispanic or Latino' | 'Not Hispanic or Latino' | 'Unknown';
+  height?: number; // cm
+  weight?: number; // kg
+}
+
+/**
  * Represents clinical trial data for a single participant/record.
  */
 export interface TrialData {
@@ -70,6 +81,10 @@ export interface TrialData {
    * Unique patient identifier
    */
   patientId: string;
+  /**
+   * Demographic information for the patient.
+   */
+  demographics: Demographics;
 }
 
 /**
@@ -102,6 +117,7 @@ const allTrialData: TrialData[] = [
     gender: 'Male',
     adverseEvents: [{ name: 'Headache', severity: 'Mild' }],
     pga: { score: 3, description: 'Moderate improvement' },
+    demographics: { age: 45, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', height: 175, weight: 70 },
   },
   {
     patientId: 'P002',
@@ -109,6 +125,7 @@ const allTrialData: TrialData[] = [
     gender: 'Female',
     adverseEvents: [{ name: 'Nausea', severity: 'Mild' }],
     pga: { score: 4, description: 'Significant improvement' },
+    demographics: { age: 52, race: 'African American', ethnicity: 'Not Hispanic or Latino', height: 162, weight: 75 },
   },
   {
     patientId: 'P003',
@@ -119,6 +136,7 @@ const allTrialData: TrialData[] = [
       { name: 'Dizziness', severity: 'Mild' },
     ],
     pga: { score: 2, description: 'Slight improvement' },
+    demographics: { age: 60, race: 'Hispanic', ethnicity: 'Hispanic or Latino', weight: 80 },
   },
   {
     patientId: 'P004',
@@ -126,6 +144,7 @@ const allTrialData: TrialData[] = [
     gender: 'Female',
     adverseEvents: [],
     pga: { score: 5, description: 'Cleared' },
+    demographics: { age: 38, race: 'Asian', ethnicity: 'Not Hispanic or Latino', height: 155, weight: 55 },
   },
   {
     patientId: 'P005',
@@ -133,6 +152,7 @@ const allTrialData: TrialData[] = [
     gender: 'Other',
     adverseEvents: [{ name: 'Rash', severity: 'Severe' }],
     pga: { score: 1, description: 'No improvement' },
+    demographics: { age: 29, race: 'Other', ethnicity: 'Not Hispanic or Latino', height: 180 },
   },
   {
     patientId: 'P006',
@@ -140,6 +160,7 @@ const allTrialData: TrialData[] = [
     gender: 'Male',
     adverseEvents: [{ name: 'Headache', severity: 'Moderate' }],
     pga: { score: 2, description: 'Slight improvement' },
+    demographics: { age: 67, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', weight: 85 },
   },
   {
     patientId: 'P007',
@@ -147,6 +168,7 @@ const allTrialData: TrialData[] = [
     gender: 'Female',
     adverseEvents: [{ name: 'Nausea', severity: 'Mild' }],
     pga: { score: 3, description: 'Moderate improvement' },
+    demographics: { age: 42, race: 'Hispanic', ethnicity: 'Hispanic or Latino', height: 160, weight: 65 },
   },
   {
     patientId: 'P008',
@@ -154,6 +176,7 @@ const allTrialData: TrialData[] = [
     gender: 'Male',
     adverseEvents: [{ name: 'Fatigue', severity: 'Mild' }],
     pga: { score: 4, description: 'Significant improvement' },
+    demographics: { age: 55, race: 'African American', ethnicity: 'Not Hispanic or Latino', height: 185, weight: 90 },
   },
   {
     patientId: 'P009',
@@ -161,6 +184,7 @@ const allTrialData: TrialData[] = [
     gender: 'Female',
     adverseEvents: [{ name: 'Dizziness', severity: 'Mild' }],
     pga: { score: 3, description: 'Moderate improvement' },
+    demographics: { age: 33, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', height: 170, weight: 60 },
   },
   {
     patientId: 'P010',
@@ -168,6 +192,7 @@ const allTrialData: TrialData[] = [
     gender: 'Other',
     adverseEvents: [{ name: 'Rash', severity: 'Mild' }, { name: 'Headache', severity: 'Mild' }],
     pga: { score: 2, description: 'Slight improvement' },
+    demographics: { age: 48, race: 'Asian', ethnicity: 'Not Hispanic or Latino', height: 168, weight: 72 },
   },
 ];
 
@@ -259,4 +284,3 @@ export async function getPgaScoreOptions(): Promise<number[]> {
   const scores = new Set(allTrialData.map(item => item.pga.score));
   return Array.from(scores).sort((a, b) => a - b);
 }
-

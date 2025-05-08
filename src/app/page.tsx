@@ -14,12 +14,12 @@ import { PatientDetailView } from '@/components/dashboard/patient-detail-view';
 import { PgaDistributionChart } from '@/components/dashboard/charts/pga-distribution-chart';
 import { AdverseEventsChart } from '@/components/dashboard/charts/adverse-events-chart';
 import { GenderDistributionChart } from '@/components/dashboard/charts/gender-distribution-chart';
+import { DemographicsTable } from '@/components/dashboard/demographics-table';
 
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartPieIcon, PresentationChartLineIcon, TableCellsIcon } from '@heroicons/react/24/outline'; // Using heroicons for variety
-import { BarChart, LineChart, PieChart } from 'lucide-react'; // Using lucide-react as preferred
+import { BarChart, PieChart, Users } from 'lucide-react'; // Using lucide-react
 
 
 // Mocked data for filter options until API provides them
@@ -54,28 +54,35 @@ export default function DashboardPage() {
     setAvailablePgaScores(MOCK_PGA_SCORES);
   }, []);
 
-  const handleFilterChange = useCallback(<K extends keyof TrialFilters>(key: K, value: TrialFilters[K]) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [key]: value,
-    }));
+  const handleFilterChange = useCallback(<K extends keyof TrialFilters>(key: K, value: TrialFilters[K] | undefined) => {
+    setFilters((prevFilters) => {
+      const newFilters = {...prevFilters};
+      if (value === undefined) {
+        delete newFilters[key];
+      } else {
+        newFilters[key] = value;
+      }
+      return newFilters;
+    });
   }, []);
+  
 
-  const applyFiltersAndSummarize = useCallback(async () => {
+  const applyFiltersAndSummarize = useCallback(async (newFilters?: TrialFilters) => {
     setIsLoading(true);
     setAiSummary(null);
+    const currentFilters = newFilters ?? filters;
     try {
-      const data = await fetchTrialData(filters);
+      const data = await fetchTrialData(currentFilters);
       setTrialData(data);
 
       if (data.length > 0) {
-        const summaryOutput = await summarizeTrialInsights({ filters });
+        const summaryOutput = await summarizeTrialInsights({ filters: currentFilters });
         setAiSummary(summaryOutput.summary);
       } else {
         setAiSummary(null); 
       }
       
-      if (!isInitialLoad) {
+      if (!isInitialLoad || newFilters) { // Also show toast if filters were programmatically changed (e.g. by clicking chart)
         toast({
           title: "Filters Applied",
           description: "Data and AI summary updated successfully.",
@@ -96,11 +103,18 @@ export default function DashboardPage() {
       setIsLoading(false);
       if (isInitialLoad) setIsInitialLoad(false);
     }
-  }, [filters, toast, isInitialLoad]);
+  }, [filters, toast, isInitialLoad]); 
 
   useEffect(() => {
-    applyFiltersAndSummarize();
-  }, [applyFiltersAndSummarize]); // applyFiltersAndSummarize is stable due to useCallback
+    // This effect now only runs when `applyFiltersAndSummarize` or `isInitialLoad` changes.
+    // `applyFiltersAndSummarize` changes when `filters`, `toast`, or `isInitialLoad` changes.
+    // This structure is generally fine but be mindful of the dependency array for `applyFiltersAndSummarize`.
+    // If `applyFiltersAndSummarize` were not stable, it could cause an infinite loop here.
+    if(isInitialLoad) { 
+        applyFiltersAndSummarize();
+    }
+  }, [isInitialLoad, applyFiltersAndSummarize]);
+
 
   const handlePatientSelect = useCallback(async (patientId: string) => {
     setIsPatientDetailOpen(true);
@@ -111,7 +125,8 @@ export default function DashboardPage() {
       const patientData = await getPatientById(patientId);
       if (patientData) {
         setSelectedPatient(patientData);
-        const summaryOutput = await summarizeTrialInsights({ patientId });
+        // Pass current dashboard filters for context, along with patientId
+        const summaryOutput = await summarizeTrialInsights({ patientId, filters });
         setPatientAiSummary(summaryOutput.summary);
       } else {
         toast({ title: "Error", description: "Patient data not found.", variant: "destructive" });
@@ -124,13 +139,20 @@ export default function DashboardPage() {
     } finally {
       setIsPatientSummaryLoading(false);
     }
-  }, [toast]);
+  }, [toast, filters]);
+
+  const handlePgaScoreSelect = useCallback((score: number) => {
+    const newFilters = { ...filters, pga: score };
+    setFilters(newFilters);
+    applyFiltersAndSummarize(newFilters); // Pass newFilters directly
+  }, [filters, applyFiltersAndSummarize]);
+
 
   const sidebar = useMemo(() => (
     <FiltersPanel
       filters={filters}
       onFilterChange={handleFilterChange}
-      onApplyFilters={applyFiltersAndSummarize}
+      onApplyFilters={() => applyFiltersAndSummarize(filters)} // Explicit call with current filters
       isLoading={isLoading}
       trialCenters={availableTrialCenters}
       genders={availableGenders}
@@ -158,7 +180,7 @@ export default function DashboardPage() {
               <p>Loading charts...</p>
             ) : trialData.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                <PgaDistributionChart data={trialData} />
+                <PgaDistributionChart data={trialData} onScoreSelect={handlePgaScoreSelect} />
                 <AdverseEventsChart data={trialData} />
                 <GenderDistributionChart data={trialData} />
               </div>
@@ -170,7 +192,16 @@ export default function DashboardPage() {
 
         <Separator />
 
-        <TrialDataTable data={trialData} isLoading={isLoading && isInitialLoad} onPatientSelect={handlePatientSelect} />
+        <DemographicsTable data={trialData} isLoading={isLoading && isInitialLoad} />
+        
+        <Separator />
+        
+        <TrialDataTable 
+          data={trialData} 
+          isLoading={isLoading && isInitialLoad} 
+          onPatientSelect={handlePatientSelect} 
+          onPgaCellSelect={handlePgaScoreSelect}
+        />
       </div>
 
       {selectedPatient && (

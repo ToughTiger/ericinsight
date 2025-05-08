@@ -14,11 +14,12 @@ interface TrialDataTableProps {
   data: TrialData[];
   isLoading: boolean;
   onPatientSelect: (patientId: string) => void;
+  onPgaCellSelect?: (score: number) => void;
 }
 
 const MAX_TABLE_HEIGHT = '400px'; // Max height before scrollbar appears
 
-export function TrialDataTable({ data, isLoading, onPatientSelect }: TrialDataTableProps) {
+export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSelect }: TrialDataTableProps) {
   if (isLoading) {
     return (
       <Card className="shadow-lg">
@@ -96,7 +97,10 @@ export function TrialDataTable({ data, isLoading, onPatientSelect }: TrialDataTa
                       </Badge>
                     )) : <span className="text-muted-foreground">None</span>}
                   </TableCell>
-                  <TableCell>
+                  <TableCell
+                    onClick={() => onPgaCellSelect && onPgaCellSelect(trial.pga.score)}
+                    className={onPgaCellSelect ? 'cursor-pointer hover:bg-muted' : ''}
+                  >
                      <Badge variant="default" className="bg-accent text-accent-foreground">{trial.pga.score}</Badge>
                   </TableCell>
                   <TableCell>{trial.pga.description}</TableCell>

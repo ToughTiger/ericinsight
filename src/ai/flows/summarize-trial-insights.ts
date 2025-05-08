@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,15 +12,27 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {getTrialData, getPatientById, TrialData, TrialFilters} from '@/services/clinical-trials';
+import {getTrialData, getPatientById, TrialData, TrialFilters, Demographics} from '@/services/clinical-trials';
 
-const SummarizeTrialInsightsInputSchema = z.object({
-  filters: z.optional(z.object({
+// Note: DemographicsSchema is not directly used in input/output of the flow,
+// but it's good for documentation or if we decide to type parts of the prompt input more granularly later.
+const DemographicsSchema = z.object({
+  age: z.number(),
+  race: z.string(),
+  ethnicity: z.string(),
+  height: z.number().optional(),
+  weight: z.number().optional(),
+});
+
+const TrialFiltersSchema = z.object({
     trialCenter: z.string().optional().describe('The trial center to filter by.'),
     gender: z.string().optional().describe('The gender to filter by.'),
     adverseEvent: z.string().optional().describe('The adverse event to filter by.'),
     pga: z.number().optional().describe('The PGA score to filter by.'),
-  })).describe('The filters to apply to the trial data. Used if patientId is not provided, or for context if patientId is provided.'),
+  });
+
+const SummarizeTrialInsightsInputSchema = z.object({
+  filters: z.optional(TrialFiltersSchema).describe('The filters to apply to the trial data. Used if patientId is not provided, or for context if patientId is provided.'),
   patientId: z.string().optional().describe('The ID of a specific patient to summarize. If provided, filters are primarily used for context if needed, and patient data is fetched directly.'),
 });
 export type SummarizeTrialInsightsInput = z.infer<typeof SummarizeTrialInsightsInputSchema>;
@@ -35,23 +48,24 @@ export async function summarizeTrialInsights(input: SummarizeTrialInsightsInput)
 
 const summarizeTrialInsightsPrompt = ai.definePrompt({
   name: 'summarizeTrialInsightsPrompt',
-  input: {schema: z.object({ // Define a more specific input schema for the prompt itself
-    patientData: z.string().optional().describe("JSON string of a single patient's data. Provided if summarizing a specific patient."),
-    filteredTrialData: z.string().optional().describe("JSON string of filtered trial data. Provided if summarizing a dataset based on filters."),
-    filtersApplied: z.string().optional().describe("Description of filters applied, if any.")
+  input: {schema: z.object({ 
+    patientData: z.string().optional().describe("JSON string of a single patient's data, including demographics. Provided if summarizing a specific patient."),
+    filteredTrialData: z.string().optional().describe("JSON string of filtered trial data, including demographics. Provided if summarizing a dataset based on filters."),
+    filtersApplied: z.string().describe("Description of filters applied, or 'No filters applied' or 'Summarizing specific patient [ID] with contextual filters: [filters JSON]'.")
   })},
   output: {schema: SummarizeTrialInsightsOutputSchema},
   prompt: `You are an AI assistant specializing in summarizing clinical trial data.
 
   {{#if patientData}}
-  Based on the following specific patient data, provide a concise summary of their profile, adverse events, and PGA status.
+  Based on the following specific patient data (which includes demographics, PGA score, and adverse events), provide a concise summary. Highlight key demographic characteristics, their PGA status, and any significant adverse events.
   Patient Data:
   {{{patientData}}}
+  Contextual Information: {{{filtersApplied}}}
   {{else}}
-  Based on the following clinical trial data and applied filters, provide a concise summary of the key trends and insights.
+  Based on the following clinical trial data and applied filters, provide a concise summary of the key trends and insights. Consider demographic distributions, common adverse events, and PGA score trends within the filtered dataset.
   {{{filtersApplied}}}
 
-  Trial Data:
+  Trial Data (sample might be truncated for brevity if too large, but trends should be identifiable):
   {{{filteredTrialData}}}
   {{/if}}
 
@@ -68,28 +82,38 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
     let promptPayload: {
       patientData?: string;
       filteredTrialData?: string;
-      filtersApplied?: string;
-    } = {};
+      filtersApplied: string; 
+    } = { filtersApplied: "No specific context provided." };
 
     if (input.patientId) {
       const patient = await getPatientById(input.patientId);
       if (patient) {
         promptPayload.patientData = JSON.stringify(patient, null, 2);
+        let patientContext = `Summarizing specific patient: ${input.patientId}.`;
+        if (input.filters && Object.keys(input.filters).length > 0) {
+             patientContext += ` Current dashboard filters for context: ${JSON.stringify(input.filters, null, 2)}`;
+        } else {
+             patientContext += ` No additional dashboard filters active.`;
+        }
+        promptPayload.filtersApplied = patientContext;
+
       } else {
         return { summary: "Error: Patient not found." };
       }
     } else {
       const trialData: TrialData[] = await getTrialData(input.filters ?? {});
-      promptPayload.filteredTrialData = JSON.stringify(trialData, null, 2);
+      // Limit data sent to prompt if too large to avoid issues, summarize first few records
+      const dataForPrompt = trialData.length > 20 ? trialData.slice(0, 20) : trialData;
+      promptPayload.filteredTrialData = JSON.stringify(dataForPrompt, null, 2);
       
-      let filterDescriptions = "Filters Applied:\n";
+      let filterDescriptions = "Filters Applied to Dataset:\n";
       if (input.filters && Object.keys(input.filters).length > 0) {
-        if (input.filters.trialCenter) filterDescriptions += `  Trial Center: ${input.filters.trialCenter}\n`;
-        if (input.filters.gender) filterDescriptions += `  Gender: ${input.filters.gender}\n`;
-        if (input.filters.adverseEvent) filterDescriptions += `  Adverse Event: ${input.filters.adverseEvent}\n`;
-        if (input.filters.pga !== undefined) filterDescriptions += `  PGA Score: ${input.filters.pga}\n`;
+        if (input.filters.trialCenter) filterDescriptions += `  - Trial Center: ${input.filters.trialCenter}\n`;
+        if (input.filters.gender) filterDescriptions += `  - Gender: ${input.filters.gender}\n`;
+        if (input.filters.adverseEvent) filterDescriptions += `  - Adverse Event: ${input.filters.adverseEvent}\n`;
+        if (input.filters.pga !== undefined) filterDescriptions += `  - PGA Score: ${input.filters.pga}\n`;
       } else {
-        filterDescriptions += "  No filters applied.\n";
+        filterDescriptions = "No filters applied. Summarizing entire dataset.\n";
       }
       promptPayload.filtersApplied = filterDescriptions;
     }
@@ -98,4 +122,3 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
     return output!;
   }
 );
-
