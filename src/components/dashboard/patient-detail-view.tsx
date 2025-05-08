@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { TrialData } from '@/services/clinical-trials';
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Lightbulb, UserCircle, MapPin, Activity, ShieldCheck, FlaskConical, Users } from 'lucide-react';
+import { Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity } from 'lucide-react';
 
 interface PatientDetailViewProps {
   patient: TrialData | null;
@@ -35,7 +34,7 @@ export function PatientDetailView({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center text-2xl">
             <UserCircle className="mr-2 h-7 w-7 text-primary" />
@@ -46,8 +45,8 @@ export function PatientDetailView({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow pr-6 -mr-6"> {/* Negative margin to compensate for scrollbar width within padding */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+        <ScrollArea className="flex-1"> 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 pr-6"> {/* Added pr-6 to content div to compensate for scrollbar */}
             <div>
               <h3 className="font-semibold text-lg mb-2 flex items-center">
                 <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial Information
@@ -63,7 +62,15 @@ export function PatientDetailView({
                 <Users className="mr-2 h-5 w-5 text-primary" /> Demographics
               </h3>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center"><strong>Gender:</strong> <Badge variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'} className="ml-1">{patient.gender}</Badge></div>
+                <div className="flex items-center">
+                  <strong>Gender:</strong> 
+                  <Badge 
+                    variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'} 
+                    className="ml-1"
+                  >
+                    {patient.gender}
+                  </Badge>
+                </div>
                 <p><strong>Age:</strong> {patient.demographics.age} years</p>
                 <p><strong>Race:</strong> {patient.demographics.race}</p>
                 <p><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</p>
@@ -118,7 +125,7 @@ export function PatientDetailView({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="mt-auto pt-4 border-t">
+        <DialogFooter className="pt-4 border-t"> {/* Removed mt-auto as flex-1 on ScrollArea handles space distribution */}
           <Button onClick={() => onOpenChange(false)} variant="outline">
             Close
           </Button>
