@@ -18,7 +18,7 @@ import {
   Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity, Stethoscope, 
   ClipboardList, LineChartIcon, Thermometer, HeartPulse, Wind, CalendarDays, CheckCircle, XCircle
 } from 'lucide-react';
-import { cn } from "@/lib/utils"; // Added import for cn
+import { cn } from "@/lib/utils";
 
 interface PatientDetailViewProps {
   patient: TrialData | null;
@@ -62,31 +62,31 @@ export function PatientDetailView({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-0"> {/* Changed to min-h-0 to allow shrinking */}
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-6">
             <SectionCard title="Demographics" icon={<Users className="mr-2 h-5 w-5" />}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                <p><strong>Age:</strong> {patient.demographics.age} ({patient.demographics.ageGroup})</p>
-                <p><strong>Gender:</strong> <Badge variant={patient.demographics.gender === 'Male' ? 'secondary' : patient.demographics.gender === 'Female' ? 'outline' : 'default'}>{patient.demographics.gender}</Badge></p>
-                <p><strong>Race:</strong> {patient.demographics.race}</p>
-                <p><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</p>
-                <p><strong>Height:</strong> {patient.demographics.heightCm ? `${patient.demographics.heightCm} cm` : 'N/A'}</p>
-                <p><strong>Weight:</strong> {patient.demographics.weightKg ? `${patient.demographics.weightKg} kg` : 'N/A'}</p>
+                <div><strong>Age:</strong> {patient.demographics.age} ({patient.demographics.ageGroup})</div>
+                <div><strong>Gender:</strong> <Badge variant={patient.demographics.gender === 'Male' ? 'secondary' : patient.demographics.gender === 'Female' ? 'outline' : 'default'}>{patient.demographics.gender}</Badge></div>
+                <div><strong>Race:</strong> {patient.demographics.race}</div>
+                <div><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</div>
+                <div><strong>Height:</strong> {patient.demographics.heightCm ? `${patient.demographics.heightCm} cm` : 'N/A'}</div>
+                <div><strong>Weight:</strong> {patient.demographics.weightKg ? `${patient.demographics.weightKg} kg` : 'N/A'}</div>
               </div>
             </SectionCard>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SectionCard title="Randomization" icon={<FlaskConical className="mr-2 h-5 w-5" />}>
                 <div className="space-y-2 text-sm">
-                  <p><strong>Trial Center:</strong> {patient.randomization.center}</p>
-                  <p><strong>Treatment Group:</strong> <Badge>{patient.randomization.treatment}</Badge></p>
+                  <div><strong>Trial Center:</strong> {patient.randomization.center}</div>
+                  <div><strong>Treatment Group:</strong> <Badge>{patient.randomization.treatment}</Badge></div>
                 </div>
               </SectionCard>
 
               <SectionCard title="Study Populations" icon={<ClipboardList className="mr-2 h-5 w-5" />}>
                  <div className="space-y-2 text-sm">
-                    <p className="flex items-center"><strong>ITT:</strong> {patient.studyPopulations.itt ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</p>
-                    <p className="flex items-center"><strong>PP:</strong> {patient.studyPopulations.pp ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</p>
+                    <div className="flex items-center"><strong>ITT:</strong> {patient.studyPopulations.itt ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</div>
+                    <div className="flex items-center"><strong>PP:</strong> {patient.studyPopulations.pp ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</div>
                   </div>
               </SectionCard>
             </div>
@@ -94,15 +94,15 @@ export function PatientDetailView({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SectionCard title="Global Assessment (PGA)" icon={<ShieldCheck className="mr-2 h-5 w-5" />}>
                     <div className="space-y-2 text-sm">
-                    <p><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground">{patient.globalAssessment.pgaScore}</Badge></p>
-                    <p><strong>Description:</strong> {patient.globalAssessment.pgaDescription}</p>
+                    <div><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground">{patient.globalAssessment.pgaScore}</Badge></div>
+                    <div><strong>Description:</strong> {patient.globalAssessment.pgaDescription}</div>
                     </div>
                 </SectionCard>
 
                 <SectionCard title="Baseline Characteristics" icon={<CalendarDays className="mr-2 h-5 w-5" />}>
                     <div className="space-y-2 text-sm">
-                    <p><strong>Surgery Last Year:</strong> {patient.baselineCharacteristics.surgeryLastYear ? 'Yes' : 'No'}</p>
-                    <p><strong>Work Status:</strong> {patient.baselineCharacteristics.workStatus}</p>
+                    <div><strong>Surgery Last Year:</strong> {patient.baselineCharacteristics.surgeryLastYear ? 'Yes' : 'No'}</div>
+                    <div><strong>Work Status:</strong> {patient.baselineCharacteristics.workStatus}</div>
                     </div>
                 </SectionCard>
             </div>
@@ -150,10 +150,10 @@ export function PatientDetailView({
 
                 <SectionCard title="Vital Signs" icon={<HeartPulse className="mr-2 h-5 w-5" />}>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                        <p><strong>Systolic BP:</strong> {patient.vitalSigns.sbp ? `${patient.vitalSigns.sbp} mmHg` : 'N/A'}</p>
-                        <p><strong>Diastolic BP:</strong> {patient.vitalSigns.dbp ? `${patient.vitalSigns.dbp} mmHg` : 'N/A'}</p>
-                        <p><strong>Pulse Rate:</strong> {patient.vitalSigns.pr ? `${patient.vitalSigns.pr} bpm` : 'N/A'}</p>
-                        <p><strong>Resp. Rate:</strong> {patient.vitalSigns.rr ? `${patient.vitalSigns.rr} breaths/min` : 'N/A'}</p>
+                        <div><strong>Systolic BP:</strong> {patient.vitalSigns.sbp ? `${patient.vitalSigns.sbp} mmHg` : 'N/A'}</div>
+                        <div><strong>Diastolic BP:</strong> {patient.vitalSigns.dbp ? `${patient.vitalSigns.dbp} mmHg` : 'N/A'}</div>
+                        <div><strong>Pulse Rate:</strong> {patient.vitalSigns.pr ? `${patient.vitalSigns.pr} bpm` : 'N/A'}</div>
+                        <div><strong>Resp. Rate:</strong> {patient.vitalSigns.rr ? `${patient.vitalSigns.rr} breaths/min` : 'N/A'}</div>
                     </div>
                 </SectionCard>
             </div>
@@ -178,4 +178,3 @@ export function PatientDetailView({
     </Dialog>
   );
 }
-
