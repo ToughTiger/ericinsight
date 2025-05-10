@@ -5,44 +5,48 @@ import type { TrialFilters, Gender } from '@/services/clinical-trials';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Hospital, Users, AlertTriangle, ListChecks, RotateCcw } from 'lucide-react';
+import { Hospital, Users, AlertTriangle, ListChecks, RotateCcw, Stethoscope, UsersRound, Filter as FilterIcon } from 'lucide-react'; // Added Stethoscope, UsersRound
 
 interface FiltersPanelProps {
   filters: TrialFilters;
   onFilterChange: <K extends keyof TrialFilters>(key: K, value: TrialFilters[K] | undefined) => void;
-  onApplyFilters: () => void; // Retained for explicit apply/summarize, could be triggered by onFilterChange in parent
+  onApplyFilters: () => void;
   isLoading: boolean;
   trialCenters: string[];
   genders: Gender[];
   adverseEvents: string[];
   pgaScores: number[];
+  treatments: Array<'Active Drug' | 'Placebo' | 'Comparator'>;
+  ageGroups: Array<'18-30' | '31-45' | '46-60' | '61+' | 'Unknown'>;
 }
 
-const PLACEHOLDER_SELECT_ITEM_VALUE = "__placeholder__";
+const PLACEHOLDER_SELECT_ITEM_VALUE = "__placeholder__"; // Value for "All" or "Any" options
 
 export function FiltersPanel({
   filters,
   onFilterChange,
-  onApplyFilters, // Keep this prop for explicit re-summarization if needed
+  onApplyFilters,
   isLoading,
   trialCenters,
   genders,
   adverseEvents,
   pgaScores,
+  treatments,
+  ageGroups,
 }: FiltersPanelProps) {
 
   const handleResetFilters = () => {
-    onFilterChange('trialCenter', undefined);
-    onFilterChange('gender', undefined);
-    onFilterChange('adverseEvent', undefined);
-    onFilterChange('pga', undefined);
-    // Optionally, call onApplyFilters here if reset should also trigger data fetch/summary
-    onApplyFilters();
+    // Reset all filters to undefined
+    (Object.keys(filters) as Array<keyof TrialFilters>).forEach(key => {
+      onFilterChange(key, undefined);
+    });
+    onApplyFilters(); // Re-apply (which will fetch all data)
   };
   
   return (
     <div className="space-y-6 h-full flex flex-col">
-      <div className="space-y-4 flex-grow"> {/* Filters take available space */}
+      <div className="space-y-4 flex-grow">
+        {/* Trial Center Filter */}
         <div>
           <Label htmlFor="trialCenter" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
             <Hospital className="mr-2 h-4 w-4 text-primary" />
@@ -50,8 +54,8 @@ export function FiltersPanel({
           </Label>
            <div className="group-data-[collapsible=icon]:hidden">
             <Select
-              value={filters.trialCenter || PLACEHOLDER_SELECT_ITEM_VALUE}
-              onValueChange={(value) => onFilterChange('trialCenter', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
+              value={filters.center || PLACEHOLDER_SELECT_ITEM_VALUE}
+              onValueChange={(value) => onFilterChange('center', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
               disabled={isLoading}
             >
               <SelectTrigger id="trialCenter">
@@ -70,6 +74,7 @@ export function FiltersPanel({
            <Hospital className="h-6 w-6 text-primary group-data-[collapsible=icon]:block hidden mx-auto" title="Trial Center"/>
         </div>
 
+        {/* Gender Filter */}
         <div>
           <Label htmlFor="gender" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
             <Users className="mr-2 h-4 w-4 text-primary" />
@@ -96,19 +101,76 @@ export function FiltersPanel({
           </div>
           <Users className="h-6 w-6 text-primary group-data-[collapsible=icon]:block hidden mx-auto" title="Gender" />
         </div>
-
+        
+        {/* Treatment Filter */}
         <div>
-          <Label htmlFor="adverseEvent" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
+          <Label htmlFor="treatment" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
+            <Stethoscope className="mr-2 h-4 w-4 text-primary" />
+            Treatment Group
+          </Label>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <Select
+              value={filters.treatment || PLACEHOLDER_SELECT_ITEM_VALUE}
+              onValueChange={(value) => onFilterChange('treatment', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value as 'Active Drug' | 'Placebo' | 'Comparator')}
+              disabled={isLoading}
+            >
+              <SelectTrigger id="treatment">
+                <SelectValue placeholder="All Treatments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>All Treatments</SelectItem>
+                {treatments.map((treatment) => (
+                  <SelectItem key={treatment} value={treatment}>
+                    {treatment}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Stethoscope className="h-6 w-6 text-primary group-data-[collapsible=icon]:block hidden mx-auto" title="Treatment Group" />
+        </div>
+
+        {/* Age Group Filter */}
+        <div>
+          <Label htmlFor="ageGroup" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
+            <UsersRound className="mr-2 h-4 w-4 text-primary" />
+            Age Group
+          </Label>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <Select
+              value={filters.ageGroup || PLACEHOLDER_SELECT_ITEM_VALUE}
+              onValueChange={(value) => onFilterChange('ageGroup', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value as '18-30' | '31-45' | '46-60' | '61+' | 'Unknown')}
+              disabled={isLoading}
+            >
+              <SelectTrigger id="ageGroup">
+                <SelectValue placeholder="All Age Groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PLACEHOLDER_SELECT_ITEM_VALUE}>All Age Groups</SelectItem>
+                {ageGroups.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <UsersRound className="h-6 w-6 text-primary group-data-[collapsible=icon]:block hidden mx-auto" title="Age Group" />
+        </div>
+
+        {/* Adverse Event Filter */}
+        <div>
+          <Label htmlFor="adverseEventName" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
             <AlertTriangle className="mr-2 h-4 w-4 text-primary" />
             Adverse Event
           </Label>
           <div className="group-data-[collapsible=icon]:hidden">
             <Select
-              value={filters.adverseEvent || PLACEHOLDER_SELECT_ITEM_VALUE}
-              onValueChange={(value) => onFilterChange('adverseEvent', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
+              value={filters.adverseEventName || PLACEHOLDER_SELECT_ITEM_VALUE}
+              onValueChange={(value) => onFilterChange('adverseEventName', value === PLACEHOLDER_SELECT_ITEM_VALUE ? undefined : value)}
               disabled={isLoading}
             >
-              <SelectTrigger id="adverseEvent">
+              <SelectTrigger id="adverseEventName">
                 <SelectValue placeholder="Any Event" />
               </SelectTrigger>
               <SelectContent>
@@ -124,21 +186,22 @@ export function FiltersPanel({
           <AlertTriangle className="h-6 w-6 text-primary group-data-[collapsible=icon]:block hidden mx-auto" title="Adverse Event" />
         </div>
 
+        {/* PGA Score Filter */}
         <div>
-          <Label htmlFor="pga" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
+          <Label htmlFor="pgaScore" className="flex items-center mb-1 text-xs group-data-[collapsible=icon]:hidden">
             <ListChecks className="mr-2 h-4 w-4 text-primary" />
             PGA Score
           </Label>
           <div className="group-data-[collapsible=icon]:hidden">
             <Select
-              value={filters.pga?.toString() || PLACEHOLDER_SELECT_ITEM_VALUE}
+              value={filters.pgaScore?.toString() || PLACEHOLDER_SELECT_ITEM_VALUE}
               onValueChange={(value) => {
                 const numericValue = parseInt(value);
-                onFilterChange('pga', value === PLACEHOLDER_SELECT_ITEM_VALUE || isNaN(numericValue) ? undefined : numericValue);
+                onFilterChange('pgaScore', value === PLACEHOLDER_SELECT_ITEM_VALUE || isNaN(numericValue) ? undefined : numericValue);
               }}
               disabled={isLoading}
             >
-              <SelectTrigger id="pga">
+              <SelectTrigger id="pgaScore">
                 <SelectValue placeholder="Any Score" />
               </SelectTrigger>
               <SelectContent>
@@ -157,6 +220,7 @@ export function FiltersPanel({
 
       <div className="mt-auto pt-4 border-t border-border"> {/* Action buttons at the bottom */}
         <Button onClick={onApplyFilters} disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group-data-[collapsible=icon]:hidden">
+          <FilterIcon className="mr-2 h-4 w-4" />
           {isLoading ? 'Applying...' : 'Apply Filters & Summarize'}
         </Button>
          <Button onClick={handleResetFilters} disabled={isLoading} variant="outline" className="w-full mt-2 group-data-[collapsible=icon]:hidden">
@@ -165,7 +229,7 @@ export function FiltersPanel({
 
         {/* Icon only buttons for collapsed sidebar */}
         <Button onClick={onApplyFilters} disabled={isLoading} size="icon" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group-data-[collapsible=icon]:flex hidden justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search-check"><path d="m8 11 2 2 4-4"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <FilterIcon className="h-5 w-5" />
           <span className="sr-only">Apply Filters & Summarize</span>
         </Button>
         <Button onClick={handleResetFilters} disabled={isLoading} variant="outline" size="icon" className="w-full mt-2 group-data-[collapsible=icon]:flex hidden justify-center">

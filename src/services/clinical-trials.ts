@@ -1,231 +1,272 @@
 
 /**
- * Represents a clinical trial center.
- */
-export interface TrialCenter {
-  /**
-   * The name of the trial center.
-   */
-  name: string;
-  /**
-   * The location of the trial center.
-   */
-  location: string;
-}
-
-/**
  * Represents a patient's gender.
  */
-export type Gender = 'Male' | 'Female' | 'Other';
+export type Gender = 'Male' | 'Female' | 'Other' | 'Unknown';
 
 /**
- * Represents an adverse event reported during the trial.
+ * Represents the severity of an adverse event.
  */
-export interface AdverseEvent {
-  /**
-   * The name of the adverse event.
-   */
-  name: string;
-  /**
-   * The severity of the adverse event.
-   */
-  severity: 'Mild' | 'Moderate' | 'Severe';
+export type AeSeverity = 'Mild' | 'Moderate' | 'Severe' | 'Unknown';
+
+/**
+ * Represents the relatedness of an adverse event to treatment.
+ */
+export type AeRelationship = 'Related' | 'Not Related' | 'Possible' | 'Unknown';
+
+
+/**
+ * Represents an adverse event record.
+ */
+export interface AeDataRecord {
+  ae: string; // Name of the adverse event
+  aeSeverity: AeSeverity;
+  aeRelationship: AeRelationship; // AE_REL
 }
 
 /**
- * Represents the Patient Global Assessment (PGA).
+ * Represents study population information for a patient.
  */
-export interface PGA {
-  /**
-   * The PGA score.
-   */
-  score: number;
-  /**
-   * A description of the PGA score.
-   */
-  description: string;
+export interface StudyPopulation {
+  itt: boolean; // Intention-to-treat
+  pp: boolean;  // Per-protocol
+}
+
+/**
+ * Represents global assessment information for a patient.
+ */
+export interface GlobalAssessment {
+  pgaScore: number;
+  pgaDescription: string;
 }
 
 /**
  * Represents demographic information for a patient.
  */
-export interface Demographics {
+export interface DemographicsData {
   age: number; // years
+  ageGroup: '18-30' | '31-45' | '46-60' | '61+' | 'Unknown';
+  gender: Gender;
   race: 'Caucasian' | 'African American' | 'Asian' | 'Hispanic' | 'Other' | 'Unknown';
   ethnicity: 'Hispanic or Latino' | 'Not Hispanic or Latino' | 'Unknown';
-  height?: number; // cm
-  weight?: number; // kg
+  heightCm?: number;
+  weightKg?: number;
 }
 
 /**
- * Represents clinical trial data for a single participant/record.
+ * Represents randomization information for a patient.
+ */
+export interface RandomizationData {
+  center: string; // Trial Center Name
+  treatment: 'Active Drug' | 'Placebo' | 'Comparator';
+}
+
+/**
+ * Represents baseline characteristics for a patient.
+ */
+export interface BaselineCharacteristics {
+  surgeryLastYear: boolean; // Surgery_1Y
+  workStatus: 'Working' | 'Not Working' | 'Student' | 'Retired' | 'Unknown'; // Work
+}
+
+/**
+ * Represents a single Visual Analog Scale (VAS) data point.
+ */
+export interface VasDataPoint {
+  day: number;
+  vasScore: number;
+}
+
+/**
+ * Represents vital signs data for a patient.
+ */
+export interface VitalSignsData {
+  dbp?: number; // Diastolic blood pressure (mmHg)
+  sbp?: number; // Systolic blood pressure (mmHg)
+  pr?: number;  // Pulse rate (beats/min)
+  rr?: number;  // Respiratory rate (breaths/min)
+}
+
+/**
+ * Represents comprehensive clinical trial data for a single participant/record.
  */
 export interface TrialData {
-  /**
-   * The trial center.
-   */
-  trialCenter: TrialCenter;
-  /**
-   * The patient's gender.
-   */
-  gender: Gender;
-  /**
-   * The adverse events reported.
-   */
-  adverseEvents: AdverseEvent[];
-  /**
-   * The PGA score.
-   */
-  pga: PGA;
-  /**
-   * Unique patient identifier
-   */
   patientId: string;
-  /**
-   * Demographic information for the patient.
-   */
-  demographics: Demographics;
+  demographics: DemographicsData;
+  randomization: RandomizationData;
+  studyPopulations: StudyPopulation;
+  globalAssessment: GlobalAssessment;
+  baselineCharacteristics: BaselineCharacteristics;
+  aeData: AeDataRecord[];
+  vasData: VasDataPoint[];
+  vitalSigns: VitalSignsData;
 }
 
 /**
  * Represents the filters that can be applied to the trial data.
  */
 export interface TrialFilters {
-  /**
-   * The trial center to filter by.
-   */
-  trialCenter?: string;
-  /**
-   * The gender to filter by.
-   */
-  gender?: Gender;
-  /**
-   * The adverse event to filter by (name of the event).
-   */
-  adverseEvent?: string;
-  /**
-   * The PGA score to filter by.
-   */
-  pga?: number;
+  center?: string; // from randomization.center
+  gender?: Gender; // from demographics.gender
+  treatment?: 'Active Drug' | 'Placebo' | 'Comparator'; // from randomization.treatment
+  ageGroup?: '18-30' | '31-45' | '46-60' | '61+' | 'Unknown'; // from demographics.ageGroup
+  pgaScore?: number; // from globalAssessment.pgaScore
+  adverseEventName?: string; // from aeData[].ae
+  itt?: boolean;
+  pp?: boolean;
 }
 
-// More comprehensive stubbed data
+// Updated and expanded mock data based on the new schema
 const allTrialData: TrialData[] = [
   {
     patientId: 'P001',
-    trialCenter: { name: 'City Hospital', location: 'New York' },
-    gender: 'Male',
-    adverseEvents: [{ name: 'Headache', severity: 'Mild' }],
-    pga: { score: 3, description: 'Moderate improvement' },
-    demographics: { age: 45, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', height: 175, weight: 70 },
+    demographics: { age: 45, ageGroup: '31-45', gender: 'Male', race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', heightCm: 175, weightKg: 70 },
+    randomization: { center: 'City Hospital', treatment: 'Active Drug' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 3, pgaDescription: 'Moderate improvement' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Working' },
+    aeData: [{ ae: 'Headache', aeSeverity: 'Mild', aeRelationship: 'Possible' }],
+    vasData: [{ day: 0, vasScore: 7 }, { day: 7, vasScore: 4 }, { day: 14, vasScore: 3 }],
+    vitalSigns: { dbp: 80, sbp: 120, pr: 70, rr: 16 },
   },
   {
     patientId: 'P002',
-    trialCenter: { name: 'City Hospital', location: 'New York' },
-    gender: 'Female',
-    adverseEvents: [{ name: 'Nausea', severity: 'Mild' }],
-    pga: { score: 4, description: 'Significant improvement' },
-    demographics: { age: 52, race: 'African American', ethnicity: 'Not Hispanic or Latino', height: 162, weight: 75 },
+    demographics: { age: 52, ageGroup: '46-60', gender: 'Female', race: 'African American', ethnicity: 'Not Hispanic or Latino', heightCm: 162, weightKg: 75 },
+    randomization: { center: 'City Hospital', treatment: 'Placebo' },
+    studyPopulations: { itt: true, pp: false },
+    globalAssessment: { pgaScore: 4, pgaDescription: 'Significant improvement' },
+    baselineCharacteristics: { surgeryLastYear: true, workStatus: 'Not Working' },
+    aeData: [{ ae: 'Nausea', aeSeverity: 'Mild', aeRelationship: 'Not Related' }],
+    vasData: [{ day: 0, vasScore: 8 }, { day: 7, vasScore: 5 }, { day: 14, vasScore: 2 }],
+    vitalSigns: { dbp: 85, sbp: 130, pr: 75, rr: 18 },
   },
   {
     patientId: 'P003',
-    trialCenter: { name: 'General Clinic', location: 'Los Angeles' },
-    gender: 'Male',
-    adverseEvents: [
-      { name: 'Fatigue', severity: 'Moderate' },
-      { name: 'Dizziness', severity: 'Mild' },
+    demographics: { age: 60, ageGroup: '46-60', gender: 'Male', race: 'Hispanic', ethnicity: 'Hispanic or Latino', weightKg: 80 },
+    randomization: { center: 'General Clinic', treatment: 'Active Drug' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 2, pgaDescription: 'Slight improvement' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Retired' },
+    aeData: [
+      { ae: 'Fatigue', aeSeverity: 'Moderate', aeRelationship: 'Related' },
+      { ae: 'Dizziness', aeSeverity: 'Mild', aeRelationship: 'Possible' },
     ],
-    pga: { score: 2, description: 'Slight improvement' },
-    demographics: { age: 60, race: 'Hispanic', ethnicity: 'Hispanic or Latino', weight: 80 },
+    vasData: [{ day: 0, vasScore: 6 }, { day: 7, vasScore: 5 }, { day: 14, vasScore: 4 }],
+    vitalSigns: { dbp: 70, sbp: 110, pr: 60, rr: 14 },
   },
   {
     patientId: 'P004',
-    trialCenter: { name: 'University Medical Center', location: 'Chicago' },
-    gender: 'Female',
-    adverseEvents: [],
-    pga: { score: 5, description: 'Cleared' },
-    demographics: { age: 38, race: 'Asian', ethnicity: 'Not Hispanic or Latino', height: 155, weight: 55 },
+    demographics: { age: 38, ageGroup: '31-45', gender: 'Female', race: 'Asian', ethnicity: 'Not Hispanic or Latino', heightCm: 155, weightKg: 55 },
+    randomization: { center: 'University Medical Center', treatment: 'Comparator' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 5, pgaDescription: 'Cleared' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Working' },
+    aeData: [],
+    vasData: [{ day: 0, vasScore: 5 }, { day: 7, vasScore: 2 }, { day: 14, vasScore: 1 }],
+    vitalSigns: { dbp: 75, sbp: 115, pr: 65, rr: 15 },
   },
   {
     patientId: 'P005',
-    trialCenter: { name: 'Rural Health Services', location: 'Austin' },
-    gender: 'Other',
-    adverseEvents: [{ name: 'Rash', severity: 'Severe' }],
-    pga: { score: 1, description: 'No improvement' },
-    demographics: { age: 29, race: 'Other', ethnicity: 'Not Hispanic or Latino', height: 180 },
+    demographics: { age: 29, ageGroup: '18-30', gender: 'Other', race: 'Other', ethnicity: 'Not Hispanic or Latino', heightCm: 180 },
+    randomization: { center: 'Rural Health Services', treatment: 'Placebo' },
+    studyPopulations: { itt: false, pp: false },
+    globalAssessment: { pgaScore: 1, pgaDescription: 'No improvement' },
+    baselineCharacteristics: { surgeryLastYear: true, workStatus: 'Student' },
+    aeData: [{ ae: 'Rash', aeSeverity: 'Severe', aeRelationship: 'Related' }],
+    vasData: [{ day: 0, vasScore: 9 }, { day: 7, vasScore: 9 }, { day: 14, vasScore: 8 }],
+    vitalSigns: { dbp: 90, sbp: 140, pr: 80, rr: 20 },
   },
+  // Add 5 more patients
   {
     patientId: 'P006',
-    trialCenter: { name: 'City Hospital', location: 'New York' },
-    gender: 'Male',
-    adverseEvents: [{ name: 'Headache', severity: 'Moderate' }],
-    pga: { score: 2, description: 'Slight improvement' },
-    demographics: { age: 67, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', weight: 85 },
+    demographics: { age: 67, ageGroup: '61+', gender: 'Male', race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', weightKg: 85 },
+    randomization: { center: 'City Hospital', treatment: 'Active Drug' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 2, pgaDescription: 'Slight improvement' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Retired' },
+    aeData: [{ ae: 'Headache', aeSeverity: 'Moderate', aeRelationship: 'Possible' }],
+    vasData: [{ day: 0, vasScore: 7 }, { day: 7, vasScore: 6 }, { day: 14, vasScore: 5 }],
+    vitalSigns: { dbp: 82, sbp: 125, pr: 72, rr: 17 },
   },
   {
     patientId: 'P007',
-    trialCenter: { name: 'General Clinic', location: 'Los Angeles' },
-    gender: 'Female',
-    adverseEvents: [{ name: 'Nausea', severity: 'Mild' }],
-    pga: { score: 3, description: 'Moderate improvement' },
-    demographics: { age: 42, race: 'Hispanic', ethnicity: 'Hispanic or Latino', height: 160, weight: 65 },
+    demographics: { age: 42, ageGroup: '31-45', gender: 'Female', race: 'Hispanic', ethnicity: 'Hispanic or Latino', heightCm: 160, weightKg: 65 },
+    randomization: { center: 'General Clinic', treatment: 'Placebo' },
+    studyPopulations: { itt: true, pp: false },
+    globalAssessment: { pgaScore: 3, pgaDescription: 'Moderate improvement' },
+    baselineCharacteristics: { surgeryLastYear: true, workStatus: 'Working' },
+    aeData: [{ ae: 'Nausea', aeSeverity: 'Mild', aeRelationship: 'Not Related' }],
+    vasData: [{ day: 0, vasScore: 6 }, { day: 7, vasScore: 3 }, { day: 14, vasScore: 2 }],
+    vitalSigns: { dbp: 78, sbp: 118, pr: 68, rr: 16 },
   },
   {
     patientId: 'P008',
-    trialCenter: { name: 'University Medical Center', location: 'Chicago' },
-    gender: 'Male',
-    adverseEvents: [{ name: 'Fatigue', severity: 'Mild' }],
-    pga: { score: 4, description: 'Significant improvement' },
-    demographics: { age: 55, race: 'African American', ethnicity: 'Not Hispanic or Latino', height: 185, weight: 90 },
+    demographics: { age: 55, ageGroup: '46-60', gender: 'Male', race: 'African American', ethnicity: 'Not Hispanic or Latino', heightCm: 185, weightKg: 90 },
+    randomization: { center: 'University Medical Center', treatment: 'Comparator' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 4, pgaDescription: 'Significant improvement' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Working' },
+    aeData: [{ ae: 'Fatigue', aeSeverity: 'Mild', aeRelationship: 'Possible' }],
+    vasData: [{ day: 0, vasScore: 7 }, { day: 7, vasScore: 4 }, { day: 14, vasScore: 1 }],
+    vitalSigns: { dbp: 88, sbp: 135, pr: 78, rr: 19 },
   },
   {
     patientId: 'P009',
-    trialCenter: { name: 'Rural Health Services', location: 'Austin' },
-    gender: 'Female',
-    adverseEvents: [{ name: 'Dizziness', severity: 'Mild' }],
-    pga: { score: 3, description: 'Moderate improvement' },
-    demographics: { age: 33, race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', height: 170, weight: 60 },
+    demographics: { age: 33, ageGroup: '31-45', gender: 'Female', race: 'Caucasian', ethnicity: 'Not Hispanic or Latino', heightCm: 170, weightKg: 60 },
+    randomization: { center: 'Rural Health Services', treatment: 'Active Drug' },
+    studyPopulations: { itt: true, pp: true },
+    globalAssessment: { pgaScore: 3, pgaDescription: 'Moderate improvement' },
+    baselineCharacteristics: { surgeryLastYear: false, workStatus: 'Working' },
+    aeData: [{ ae: 'Dizziness', aeSeverity: 'Mild', aeRelationship: 'Possible' }],
+    vasData: [{ day: 0, vasScore: 5 }, { day: 7, vasScore: 3 }, { day: 14, vasScore: 2 }],
+    vitalSigns: { dbp: 72, sbp: 112, pr: 62, rr: 14 },
   },
   {
     patientId: 'P010',
-    trialCenter: { name: 'City Hospital', location: 'New York' },
-    gender: 'Other',
-    adverseEvents: [{ name: 'Rash', severity: 'Mild' }, { name: 'Headache', severity: 'Mild' }],
-    pga: { score: 2, description: 'Slight improvement' },
-    demographics: { age: 48, race: 'Asian', ethnicity: 'Not Hispanic or Latino', height: 168, weight: 72 },
+    demographics: { age: 48, ageGroup: '46-60', gender: 'Other', race: 'Asian', ethnicity: 'Not Hispanic or Latino', heightCm: 168, weightKg: 72 },
+    randomization: { center: 'City Hospital', treatment: 'Placebo' },
+    studyPopulations: { itt: true, pp: false },
+    globalAssessment: { pgaScore: 2, pgaDescription: 'Slight improvement' },
+    baselineCharacteristics: { surgeryLastYear: true, workStatus: 'Not Working' },
+    aeData: [{ ae: 'Rash', aeSeverity: 'Mild', aeRelationship: 'Not Related' }, { ae: 'Headache', aeSeverity: 'Mild', aeRelationship: 'Possible' }],
+    vasData: [{ day: 0, vasScore: 8 }, { day: 7, vasScore: 7 }, { day: 14, vasScore: 6 }],
+    vitalSigns: { dbp: 86, sbp: 128, pr: 76, rr: 18 },
   },
 ];
 
 /**
  * Asynchronously retrieves clinical trial data based on the provided filters.
- * This is a mock implementation. In a real application, this would fetch data from an API.
- *
- * @param filters The filters to apply to the trial data.
- * @returns A promise that resolves to an array of TrialData objects.
  */
 export async function getTrialData(filters: TrialFilters): Promise<TrialData[]> {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call delay
 
   let filteredData = allTrialData;
 
-  if (filters.trialCenter) {
-    filteredData = filteredData.filter(
-      (item) => item.trialCenter.name === filters.trialCenter
-    );
+  if (filters.center) {
+    filteredData = filteredData.filter(item => item.randomization.center === filters.center);
   }
   if (filters.gender) {
-    filteredData = filteredData.filter(
-      (item) => item.gender === filters.gender
+    filteredData = filteredData.filter(item => item.demographics.gender === filters.gender);
+  }
+  if (filters.treatment) {
+    filteredData = filteredData.filter(item => item.randomization.treatment === filters.treatment);
+  }
+  if (filters.ageGroup) {
+    filteredData = filteredData.filter(item => item.demographics.ageGroup === filters.ageGroup);
+  }
+  if (filters.pgaScore !== undefined) {
+    filteredData = filteredData.filter(item => item.globalAssessment.pgaScore === filters.pgaScore);
+  }
+  if (filters.adverseEventName) {
+    filteredData = filteredData.filter(item =>
+      item.aeData.some(ae => ae.ae === filters.adverseEventName)
     );
   }
-  if (filters.adverseEvent) {
-    filteredData = filteredData.filter((item) =>
-      item.adverseEvents.some((event) => event.name === filters.adverseEvent)
-    );
+  if (filters.itt !== undefined) {
+    filteredData = filteredData.filter(item => item.studyPopulations.itt === filters.itt);
   }
-  if (filters.pga !== undefined) {
-    filteredData = filteredData.filter((item) => item.pga.score === filters.pga);
+  if (filters.pp !== undefined) {
+    filteredData = filteredData.filter(item => item.studyPopulations.pp === filters.pp);
   }
 
   return filteredData;
@@ -233,54 +274,65 @@ export async function getTrialData(filters: TrialFilters): Promise<TrialData[]> 
 
 /**
  * Asynchronously retrieves a single patient's data by their ID.
- * @param patientId The ID of the patient to retrieve.
- * @returns A promise that resolves to a TrialData object or undefined if not found.
  */
 export async function getPatientById(patientId: string): Promise<TrialData | undefined> {
   await new Promise(resolve => setTimeout(resolve, 200)); // Simulate API call delay
   return allTrialData.find(patient => patient.patientId === patientId);
 }
 
-
 /**
  * Retrieves a list of unique trial center names.
- * @returns A promise that resolves to an array of strings.
  */
 export async function getTrialCenterOptions(): Promise<string[]> {
-  await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API delay
-  const centers = new Set(allTrialData.map(item => item.trialCenter.name));
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const centers = new Set(allTrialData.map(item => item.randomization.center));
   return Array.from(centers).sort();
 }
 
 /**
  * Retrieves a list of unique gender options.
- * @returns A promise that resolves to an array of Gender types.
  */
 export async function getGenderOptions(): Promise<Gender[]> {
    await new Promise(resolve => setTimeout(resolve, 100));
-   const genders = new Set(allTrialData.map(item => item.gender));
+   const genders = new Set(allTrialData.map(item => item.demographics.gender));
    return Array.from(genders);
 }
 
 /**
+ * Retrieves a list of unique treatment options.
+ */
+export async function getTreatmentOptions(): Promise<Array<'Active Drug' | 'Placebo' | 'Comparator'>> {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const treatments = new Set(allTrialData.map(item => item.randomization.treatment));
+  return Array.from(treatments);
+}
+
+/**
+ * Retrieves a list of unique age group options.
+ */
+export async function getAgeGroupOptions(): Promise<Array<'18-30' | '31-45' | '46-60' | '61+' | 'Unknown'>> {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const ageGroups = new Set(allTrialData.map(item => item.demographics.ageGroup));
+  return Array.from(ageGroups);
+}
+
+/**
  * Retrieves a list of unique adverse event names.
- * @returns A promise that resolves to an array of strings.
  */
 export async function getAdverseEventOptions(): Promise<string[]> {
   await new Promise(resolve => setTimeout(resolve, 100));
   const events = new Set<string>();
   allTrialData.forEach(item => {
-    item.adverseEvents.forEach(event => events.add(event.name));
+    item.aeData.forEach(event => events.add(event.ae));
   });
   return Array.from(events).sort();
 }
 
 /**
  * Retrieves a list of unique PGA scores.
- * @returns A promise that resolves to an array of numbers.
  */
 export async function getPgaScoreOptions(): Promise<number[]> {
   await new Promise(resolve => setTimeout(resolve, 100));
-  const scores = new Set(allTrialData.map(item => item.pga.score));
+  const scores = new Set(allTrialData.map(item => item.globalAssessment.pgaScore));
   return Array.from(scores).sort((a, b) => a - b);
 }

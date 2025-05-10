@@ -1,21 +1,23 @@
 
 "use client";
 
-import type { TrialData } from '@/services/clinical-trials';
+import type { TrialData, AeDataRecord, VasDataPoint } from '@/services/clinical-trials';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity, Stethoscope, 
+  ClipboardList, LineChartIcon, Thermometer, HeartPulse, Wind, CalendarDays, CheckCircle, XCircle
+} from 'lucide-react';
 
 interface PatientDetailViewProps {
   patient: TrialData | null;
@@ -24,6 +26,18 @@ interface PatientDetailViewProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
+
+const SectionCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode, className?: string }> = ({ title, icon, children, className }) => (
+  <Card className={cn("shadow-md", className)}>
+    <CardHeader>
+      <CardTitle className="flex items-center text-lg text-primary">
+        {icon} {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent>{children}</CardContent>
+  </Card>
+);
+
 
 export function PatientDetailView({
   patient,
@@ -36,107 +50,130 @@ export function PatientDetailView({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[100vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b sticky top-0 bg-background z-10">
           <DialogTitle className="flex items-center text-2xl">
-            <UserCircle className="mr-2 h-7 w-7 text-primary" />
+            <UserCircle className="mr-3 h-8 w-8 text-primary" />
             Patient Details: {patient.patientId}
           </DialogTitle>
           <DialogDescription>
-            Detailed information and AI-generated insights for patient {patient.patientId}.
+            Comprehensive information for patient {patient.patientId}.
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-max overflow-y-auto"> 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2 flex items-center">
-                <FlaskConical className="mr-2 h-5 w-5 text-primary" /> Trial Information
-              </h3>
-              <div className="space-y-2 text-sm">
-                <p><strong>Trial Center:</strong> {patient.trialCenter.name}</p>
-                <p><strong>Location:</strong> {patient.trialCenter.location}</p>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2 flex items-center">
-                <Users className="mr-2 h-5 w-5 text-primary" /> Demographics
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center">
-                  <strong className="mr-1">Gender:</strong> 
-                  <Badge 
-                    variant={patient.gender === 'Male' ? 'secondary' : patient.gender === 'Female' ? 'outline' : 'default'} 
-                  >
-                    {patient.gender}
-                  </Badge>
-                </div>
-                <p><strong>Age:</strong> {patient.demographics.age} years</p>
+        <ScrollArea className="flex-1 min-h-0"> {/* Changed to min-h-0 to allow shrinking */}
+          <div className="p-6 space-y-6">
+            <SectionCard title="Demographics" icon={<Users className="mr-2 h-5 w-5" />}>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                <p><strong>Age:</strong> {patient.demographics.age} ({patient.demographics.ageGroup})</p>
+                <p><strong>Gender:</strong> <Badge variant={patient.demographics.gender === 'Male' ? 'secondary' : patient.demographics.gender === 'Female' ? 'outline' : 'default'}>{patient.demographics.gender}</Badge></p>
                 <p><strong>Race:</strong> {patient.demographics.race}</p>
                 <p><strong>Ethnicity:</strong> {patient.demographics.ethnicity}</p>
-                {patient.demographics.height && <p><strong>Height:</strong> {patient.demographics.height} cm</p>}
-                {patient.demographics.weight && <p><strong>Weight:</strong> {patient.demographics.weight} kg</p>}
+                <p><strong>Height:</strong> {patient.demographics.heightCm ? `${patient.demographics.heightCm} cm` : 'N/A'}</p>
+                <p><strong>Weight:</strong> {patient.demographics.weightKg ? `${patient.demographics.weightKg} kg` : 'N/A'}</p>
               </div>
-            </div>
+            </SectionCard>
 
-            <div>
-              <h3 className="font-semibold text-lg mb-2 flex items-center">
-                <ShieldCheck className="mr-2 h-5 w-5 text-primary" /> PGA Assessment
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center"><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground ml-1">{patient.pga.score}</Badge></div>
-                <p><strong>Description:</strong> {patient.pga.description}</p>
-              </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <h3 className="font-semibold text-lg mb-2 flex items-center">
-                <Activity className="mr-2 h-5 w-5 text-primary" /> Adverse Events
-              </h3>
-              {patient.adverseEvents.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {patient.adverseEvents.map((event, index) => (
-                    <Badge key={index} variant="destructive">
-                      {event.name} ({event.severity})
-                    </Badge>
-                  ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SectionCard title="Randomization" icon={<FlaskConical className="mr-2 h-5 w-5" />}>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Trial Center:</strong> {patient.randomization.center}</p>
+                  <p><strong>Treatment Group:</strong> <Badge>{patient.randomization.treatment}</Badge></p>
                 </div>
+              </SectionCard>
+
+              <SectionCard title="Study Populations" icon={<ClipboardList className="mr-2 h-5 w-5" />}>
+                 <div className="space-y-2 text-sm">
+                    <p className="flex items-center"><strong>ITT:</strong> {patient.studyPopulations.itt ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</p>
+                    <p className="flex items-center"><strong>PP:</strong> {patient.studyPopulations.pp ? <CheckCircle className="ml-2 h-5 w-5 text-green-500" /> : <XCircle className="ml-2 h-5 w-5 text-red-500" />}</p>
+                  </div>
+              </SectionCard>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SectionCard title="Global Assessment (PGA)" icon={<ShieldCheck className="mr-2 h-5 w-5" />}>
+                    <div className="space-y-2 text-sm">
+                    <p><strong>Score:</strong> <Badge className="bg-accent text-accent-foreground">{patient.globalAssessment.pgaScore}</Badge></p>
+                    <p><strong>Description:</strong> {patient.globalAssessment.pgaDescription}</p>
+                    </div>
+                </SectionCard>
+
+                <SectionCard title="Baseline Characteristics" icon={<CalendarDays className="mr-2 h-5 w-5" />}>
+                    <div className="space-y-2 text-sm">
+                    <p><strong>Surgery Last Year:</strong> {patient.baselineCharacteristics.surgeryLastYear ? 'Yes' : 'No'}</p>
+                    <p><strong>Work Status:</strong> {patient.baselineCharacteristics.workStatus}</p>
+                    </div>
+                </SectionCard>
+            </div>
+
+            <SectionCard title="Adverse Events" icon={<Activity className="mr-2 h-5 w-5" />} className="max-h-96 overflow-y-auto">
+              {patient.aeData.length > 0 ? (
+                 <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Severity</TableHead>
+                        <TableHead>Relationship</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {patient.aeData.map((event: AeDataRecord, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{event.ae}</TableCell>
+                          <TableCell><Badge variant={event.aeSeverity === 'Severe' ? 'destructive' : 'secondary'}>{event.aeSeverity}</Badge></TableCell>
+                          <TableCell>{event.aeRelationship}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
               ) : (
                 <p className="text-sm text-muted-foreground">No adverse events reported.</p>
               )}
+            </SectionCard>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SectionCard title="VAS Data (Pain Score)" icon={<LineChartIcon className="mr-2 h-5 w-5" />} className="max-h-96 overflow-y-auto">
+                {patient.vasData.length > 0 ? (
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Day</TableHead><TableHead>VAS Score</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                        {patient.vasData.map((vas: VasDataPoint, index: number) => (
+                            <TableRow key={index}><TableCell>{vas.day}</TableCell><TableCell>{vas.vasScore}</TableCell></TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No VAS data available.</p>
+                )}
+                </SectionCard>
+
+                <SectionCard title="Vital Signs" icon={<HeartPulse className="mr-2 h-5 w-5" />}>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                        <p><strong>Systolic BP:</strong> {patient.vitalSigns.sbp ? `${patient.vitalSigns.sbp} mmHg` : 'N/A'}</p>
+                        <p><strong>Diastolic BP:</strong> {patient.vitalSigns.dbp ? `${patient.vitalSigns.dbp} mmHg` : 'N/A'}</p>
+                        <p><strong>Pulse Rate:</strong> {patient.vitalSigns.pr ? `${patient.vitalSigns.pr} bpm` : 'N/A'}</p>
+                        <p><strong>Resp. Rate:</strong> {patient.vitalSigns.rr ? `${patient.vitalSigns.rr} breaths/min` : 'N/A'}</p>
+                    </div>
+                </SectionCard>
             </div>
 
-            <Card className="md:col-span-2 shadow-md bg-primary/5 border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg text-primary">
-                  <Lightbulb className="mr-2 h-5 w-5" /> AI Insights for this Patient
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingSummary ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                ) : aiSummary ? (
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap">{aiSummary}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No AI summary available for this patient.</p>
-                )}
-              </CardContent>
-            </Card>
+
+            <SectionCard title="AI Insights for this Patient" icon={<Lightbulb className="mr-2 h-5 w-5" />} className="bg-primary/5 border-primary/20">
+              {isLoadingSummary ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : aiSummary ? (
+                <p className="text-sm text-foreground/90 whitespace-pre-wrap">{aiSummary}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No AI summary available for this patient.</p>
+              )}
+            </SectionCard>
           </div>
         </ScrollArea>
-{/* 
-        <DialogFooter className="px-6 pt-4 pb-6 border-t">
-          <Button onClick={() => onOpenChange(false)} variant="outline">
-            Close
-          </Button>
-        </DialogFooter> */}
       </DialogContent>
     </Dialog>
   );
 }
-

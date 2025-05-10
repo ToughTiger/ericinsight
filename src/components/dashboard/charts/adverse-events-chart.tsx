@@ -5,7 +5,7 @@ import type { TrialData } from '@/services/clinical-trials';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { AlertTriangle } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react'; // Changed icon to ShieldAlert for AE
 
 interface AdverseEventsChartProps {
   data: TrialData[];
@@ -20,23 +20,23 @@ const chartConfig = {
 
 export function AdverseEventsChart({ data }: AdverseEventsChartProps) {
   const eventCounts = data.reduce((acc, trial) => {
-    trial.adverseEvents.forEach(event => {
-      acc[event.name] = (acc[event.name] || 0) + 1;
+    trial.aeData.forEach(event => { // Updated path to aeData
+      acc[event.ae] = (acc[event.ae] || 0) + 1; // Updated field to event.ae
     });
     return acc;
   }, {} as Record<string, number>);
 
   const chartData = Object.entries(eventCounts)
     .map(([name, frequency]) => ({ name, frequency }))
-    .sort((a, b) => b.frequency - a.frequency) // Sort by frequency desc
-    .slice(0, 10); // Show top 10 adverse events
+    .sort((a, b) => b.frequency - a.frequency)
+    .slice(0, 10); 
 
   if (chartData.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <AlertTriangle className="mr-2 h-5 w-5 text-primary" />
+            <ShieldAlert className="mr-2 h-5 w-5 text-primary" />
             Adverse Event Frequency
           </CardTitle>
           <CardDescription>Frequency of reported adverse events.</CardDescription>
@@ -52,7 +52,7 @@ export function AdverseEventsChart({ data }: AdverseEventsChartProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <AlertTriangle className="mr-2 h-5 w-5 text-primary" />
+          <ShieldAlert className="mr-2 h-5 w-5 text-primary" />
           Adverse Event Frequency
         </CardTitle>
         <CardDescription>Top reported adverse events by frequency.</CardDescription>

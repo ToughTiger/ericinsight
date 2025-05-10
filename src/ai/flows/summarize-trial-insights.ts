@@ -12,24 +12,83 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {getTrialData, getPatientById, TrialData, TrialFilters, Demographics} from '@/services/clinical-trials';
+import {getTrialData, getPatientById, TrialData, TrialFilters } from '@/services/clinical-trials';
 
-// Note: DemographicsSchema is not directly used in input/output of the flow,
-// but it's good for documentation or if we decide to type parts of the prompt input more granularly later.
-const DemographicsSchema = z.object({
-  age: z.number(),
-  race: z.string(),
-  ethnicity: z.string(),
-  height: z.number().optional(),
-  weight: z.number().optional(),
+// Define Zod schemas for the new data structures to be used in the prompt input.
+// These are simplified for the prompt; the full types are in clinical-trials.ts.
+
+const AeDataRecordSchema = z.object({
+  ae: z.string(),
+  aeSeverity: z.string(), // Simplified from AeSeverity type
+  aeRelationship: z.string(), // Simplified from AeRelationship type
 });
 
+const StudyPopulationSchema = z.object({
+  itt: z.boolean(),
+  pp: z.boolean(),
+});
+
+const GlobalAssessmentSchema = z.object({
+  pgaScore: z.number(),
+  pgaDescription: z.string(),
+});
+
+const DemographicsDataSchema = z.object({
+  age: z.number(),
+  ageGroup: z.string(), // Simplified
+  gender: z.string(), // Simplified
+  race: z.string().optional(),
+  ethnicity: z.string().optional(),
+  heightCm: z.number().optional(),
+  weightKg: z.number().optional(),
+});
+
+const RandomizationDataSchema = z.object({
+  center: z.string(),
+  treatment: z.string(), // Simplified
+});
+
+const BaselineCharacteristicsSchema = z.object({
+  surgeryLastYear: z.boolean(),
+  workStatus: z.string(), // Simplified
+});
+
+const VasDataPointSchema = z.object({
+  day: z.number(),
+  vasScore: z.number(),
+});
+
+const VitalSignsDataSchema = z.object({
+  dbp: z.number().optional(),
+  sbp: z.number().optional(),
+  pr: z.number().optional(),
+  rr: z.number().optional(),
+});
+
+// Full TrialData schema for prompt input if needed, or use specific parts
+const TrialDataPromptSchema = z.object({
+  patientId: z.string(),
+  demographics: DemographicsDataSchema,
+  randomization: RandomizationDataSchema,
+  studyPopulations: StudyPopulationSchema,
+  globalAssessment: GlobalAssessmentSchema,
+  baselineCharacteristics: BaselineCharacteristicsSchema,
+  aeData: z.array(AeDataRecordSchema),
+  vasData: z.array(VasDataPointSchema),
+  vitalSigns: VitalSignsDataSchema,
+});
+
+
 const TrialFiltersSchema = z.object({
-    trialCenter: z.string().optional().describe('The trial center to filter by.'),
-    gender: z.string().optional().describe('The gender to filter by.'),
-    adverseEvent: z.string().optional().describe('The adverse event to filter by.'),
-    pga: z.number().optional().describe('The PGA score to filter by.'),
-  });
+  center: z.string().optional().describe('The trial center to filter by.'),
+  gender: z.string().optional().describe('The gender to filter by.'),
+  treatment: z.string().optional().describe('The treatment group to filter by.'),
+  ageGroup: z.string().optional().describe('The age group to filter by.'),
+  pgaScore: z.number().optional().describe('The PGA score to filter by.'),
+  adverseEventName: z.string().optional().describe('A specific adverse event to filter by.'),
+  itt: z.boolean().optional().describe('Filter by ITT population status.'),
+  pp: z.boolean().optional().describe('Filter by PP population status.'),
+});
 
 const SummarizeTrialInsightsInputSchema = z.object({
   filters: z.optional(TrialFiltersSchema).describe('The filters to apply to the trial data. Used if patientId is not provided, or for context if patientId is provided.'),
@@ -46,30 +105,44 @@ export async function summarizeTrialInsights(input: SummarizeTrialInsightsInput)
   return summarizeTrialInsightsFlow(input);
 }
 
+// Define a schema for the data that will be passed into the prompt
+const PromptInputSchema = z.object({
+    patientData: z.string().optional().describe("JSON string of a single patient's full data record. Provided if summarizing a specific patient."),
+    filteredTrialData: z.string().optional().describe("JSON string of filtered trial data (array of full patient records). Provided if summarizing a dataset based on filters."),
+    filtersApplied: z.string().describe("Description of filters applied, or 'No filters applied' or 'Summarizing specific patient [ID] with contextual filters: [filters JSON]'.")
+});
+
+
 const summarizeTrialInsightsPrompt = ai.definePrompt({
   name: 'summarizeTrialInsightsPrompt',
-  input: {schema: z.object({ 
-    patientData: z.string().optional().describe("JSON string of a single patient's data, including demographics. Provided if summarizing a specific patient."),
-    filteredTrialData: z.string().optional().describe("JSON string of filtered trial data, including demographics. Provided if summarizing a dataset based on filters."),
-    filtersApplied: z.string().describe("Description of filters applied, or 'No filters applied' or 'Summarizing specific patient [ID] with contextual filters: [filters JSON]'.")
-  })},
+  input: {schema: PromptInputSchema },
   output: {schema: SummarizeTrialInsightsOutputSchema},
   prompt: `You are an AI assistant specializing in summarizing clinical trial data.
+  Your summary should be concise and highlight key findings.
 
   {{#if patientData}}
-  Based on the following specific patient data (which includes demographics, PGA score, and adverse events), provide a concise summary. Highlight key demographic characteristics, their PGA status, and any significant adverse events.
-  Patient Data:
+  Based on the following specific patient data, provide a summary.
+  Include key demographic characteristics (age, gender, age group), their assigned treatment, PGA status, notable adverse events (especially severe or related), and any significant baseline characteristics or vital signs if remarkable.
+  Patient Data (JSON):
   {{{patientData}}}
+
   Contextual Information: {{{filtersApplied}}}
   {{else}}
-  Based on the following clinical trial data and applied filters, provide a concise summary of the key trends and insights. Consider demographic distributions, common adverse events, and PGA score trends within the filtered dataset.
+  Based on the following clinical trial data (which may be a sample of a larger dataset) and the applied filters, provide a summary of key trends and insights.
+  Consider:
+  - Demographic distributions (age groups, gender).
+  - Treatment group distributions and outcomes if discernible.
+  - Common or severe adverse events and their relationship to treatment if apparent.
+  - PGA score trends within the filtered dataset.
+  - Any notable patterns in baseline characteristics, study populations, VAS scores, or vital signs.
+
   {{{filtersApplied}}}
 
-  Trial Data (sample might be truncated for brevity if too large, but trends should be identifiable):
+  Trial Data (JSON array, sample might be truncated for brevity):
   {{{filteredTrialData}}}
   {{/if}}
 
-  Summary:`,
+  Provide your summary:`,
 });
 
 const summarizeTrialInsightsFlow = ai.defineFlow(
@@ -79,15 +152,14 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
     outputSchema: SummarizeTrialInsightsOutputSchema,
   },
   async (input: SummarizeTrialInsightsInput) => {
-    let promptPayload: {
-      patientData?: string;
-      filteredTrialData?: string;
-      filtersApplied: string; 
-    } = { filtersApplied: "No specific context provided." };
+    let promptPayload: z.infer<typeof PromptInputSchema> = {
+        filtersApplied: "No specific context provided."
+    };
 
     if (input.patientId) {
       const patient = await getPatientById(input.patientId);
       if (patient) {
+        // Serialize the whole patient object according to TrialData structure
         promptPayload.patientData = JSON.stringify(patient, null, 2);
         let patientContext = `Summarizing specific patient: ${input.patientId}.`;
         if (input.filters && Object.keys(input.filters).length > 0) {
@@ -103,22 +175,36 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
     } else {
       const trialData: TrialData[] = await getTrialData(input.filters ?? {});
       // Limit data sent to prompt if too large to avoid issues, summarize first few records
-      const dataForPrompt = trialData.length > 20 ? trialData.slice(0, 20) : trialData;
+      const dataForPrompt = trialData.length > 10 ? trialData.slice(0, 10) : trialData; // Reduced sample size
+      // Serialize an array of patient objects
       promptPayload.filteredTrialData = JSON.stringify(dataForPrompt, null, 2);
       
       let filterDescriptions = "Filters Applied to Dataset:\n";
       if (input.filters && Object.keys(input.filters).length > 0) {
-        if (input.filters.trialCenter) filterDescriptions += `  - Trial Center: ${input.filters.trialCenter}\n`;
-        if (input.filters.gender) filterDescriptions += `  - Gender: ${input.filters.gender}\n`;
-        if (input.filters.adverseEvent) filterDescriptions += `  - Adverse Event: ${input.filters.adverseEvent}\n`;
-        if (input.filters.pga !== undefined) filterDescriptions += `  - PGA Score: ${input.filters.pga}\n`;
+        const activeFilters = Object.entries(input.filters)
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `  - ${key}: ${JSON.stringify(value)}`)
+            .join("\n");
+        if (activeFilters) {
+            filterDescriptions += activeFilters;
+        } else {
+            filterDescriptions = "No filters applied. Summarizing entire dataset.\n";
+        }
       } else {
         filterDescriptions = "No filters applied. Summarizing entire dataset.\n";
       }
       promptPayload.filtersApplied = filterDescriptions;
     }
 
-    const {output} = await summarizeTrialInsightsPrompt(promptPayload);
-    return output!;
+    try {
+        const {output} = await summarizeTrialInsightsPrompt(promptPayload);
+        if (!output) {
+            return { summary: "Error: AI failed to generate a summary."};
+        }
+        return output;
+    } catch (e) {
+        console.error("Error calling AI prompt:", e);
+        return { summary: "Error: An exception occurred while generating the AI summary."};
+    }
   }
 );

@@ -11,29 +11,33 @@ interface GenderDistributionChartProps {
   data: TrialData[];
 }
 
+// Ensure GENDER_COLORS includes all Gender types, including 'Unknown' if it's possible.
 const GENDER_COLORS: Record<Gender, string> = {
   Male: "hsl(var(--chart-1))",
   Female: "hsl(var(--chart-2))",
   Other: "hsl(var(--chart-3))",
+  Unknown: "hsl(var(--chart-4))", // Added color for Unknown
 };
 
 const chartConfig = {
   Male: { label: "Male", color: GENDER_COLORS.Male },
   Female: { label: "Female", color: GENDER_COLORS.Female },
   Other: { label: "Other", color: GENDER_COLORS.Other },
+  Unknown: { label: "Unknown", color: GENDER_COLORS.Unknown }, // Added Unknown to config
 } satisfies ChartConfig;
 
 
 export function GenderDistributionChart({ data }: GenderDistributionChartProps) {
   const genderCounts = data.reduce((acc, trial) => {
-    acc[trial.gender] = (acc[trial.gender] || 0) + 1;
+    const gender = trial.demographics.gender; // Updated path
+    acc[gender] = (acc[gender] || 0) + 1;
     return acc;
   }, {} as Record<Gender, number>);
 
   const chartData = Object.entries(genderCounts).map(([name, value]) => ({
     name: name as Gender,
     value,
-    fill: GENDER_COLORS[name as Gender],
+    fill: GENDER_COLORS[name as Gender] || GENDER_COLORS.Unknown, // Fallback for safety
   }));
 
   if (chartData.length === 0) {

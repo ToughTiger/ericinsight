@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart3, UserSearch } from 'lucide-react';
+import { List, UserSearch, CheckCircle, XCircle } from 'lucide-react'; // Updated icons
 
 interface TrialDataTableProps {
   data: TrialData[];
@@ -17,7 +17,7 @@ interface TrialDataTableProps {
   onPgaCellSelect?: (score: number) => void;
 }
 
-const MAX_TABLE_HEIGHT = '400px'; // Max height before scrollbar appears
+const MAX_TABLE_HEIGHT = '400px';
 
 export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSelect }: TrialDataTableProps) {
   if (isLoading) {
@@ -25,8 +25,8 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
-             <BarChart3 className="mr-2 h-6 w-6 text-primary" />
-            Clinical Trial Data
+             <List className="mr-2 h-6 w-6 text-primary" />
+            Patient Data Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -45,8 +45,8 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center text-xl">
-            <BarChart3 className="mr-2 h-6 w-6 text-primary" />
-            Clinical Trial Data
+            <List className="mr-2 h-6 w-6 text-primary" />
+            Patient Data Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -60,8 +60,8 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
-          <BarChart3 className="mr-2 h-6 w-6 text-primary" />
-          Clinical Trial Data
+          <List className="mr-2 h-6 w-6 text-primary" />
+          Patient Data Overview
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -70,12 +70,14 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
             <TableHeader>
               <TableRow>
                 <TableHead>Patient ID</TableHead>
-                <TableHead>Trial Center</TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead>Center</TableHead>
+                <TableHead>Treatment</TableHead>
                 <TableHead>Gender</TableHead>
-                <TableHead>Adverse Events</TableHead>
+                <TableHead>Age Group</TableHead>
                 <TableHead>PGA Score</TableHead>
-                <TableHead>PGA Description</TableHead>
+                <TableHead>ITT</TableHead>
+                <TableHead>PP</TableHead>
+                <TableHead>AE Count</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -83,27 +85,36 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
               {data.map((trial) => (
                 <TableRow key={trial.patientId} className="transition-colors hover:bg-muted/50">
                   <TableCell className="font-medium">{trial.patientId}</TableCell>
-                  <TableCell>{trial.trialCenter.name}</TableCell>
-                  <TableCell>{trial.trialCenter.location}</TableCell>
+                  <TableCell>{trial.randomization.center}</TableCell>
                   <TableCell>
-                    <Badge variant={trial.gender === 'Male' ? 'secondary' : trial.gender === 'Female' ? 'outline' : 'default'}>
-                      {trial.gender}
+                    <Badge 
+                      variant={
+                        trial.randomization.treatment === 'Active Drug' ? 'default' : 
+                        trial.randomization.treatment === 'Placebo' ? 'secondary' : 'outline'
+                      }
+                    >
+                      {trial.randomization.treatment}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {trial.adverseEvents.length > 0 ? trial.adverseEvents.map((event, i) => (
-                      <Badge key={i} variant="destructive" className="mr-1 mb-1">
-                        {event.name} ({event.severity})
-                      </Badge>
-                    )) : <span className="text-muted-foreground">None</span>}
+                    <Badge variant={trial.demographics.gender === 'Male' ? 'secondary' : trial.demographics.gender === 'Female' ? 'outline' : 'default'}>
+                      {trial.demographics.gender}
+                    </Badge>
                   </TableCell>
+                  <TableCell>{trial.demographics.ageGroup}</TableCell>
                   <TableCell
-                    onClick={() => onPgaCellSelect && onPgaCellSelect(trial.pga.score)}
+                    onClick={() => onPgaCellSelect && onPgaCellSelect(trial.globalAssessment.pgaScore)}
                     className={onPgaCellSelect ? 'cursor-pointer hover:bg-muted' : ''}
                   >
-                     <Badge variant="default" className="bg-accent text-accent-foreground">{trial.pga.score}</Badge>
+                     <Badge variant="default" className="bg-accent text-accent-foreground">{trial.globalAssessment.pgaScore}</Badge>
                   </TableCell>
-                  <TableCell>{trial.pga.description}</TableCell>
+                  <TableCell>
+                    {trial.studyPopulations.itt ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />}
+                  </TableCell>
+                  <TableCell>
+                    {trial.studyPopulations.pp ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />}
+                  </TableCell>
+                  <TableCell>{trial.aeData.length}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"

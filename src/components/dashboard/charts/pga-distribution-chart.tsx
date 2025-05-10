@@ -21,15 +21,15 @@ const chartConfig = {
 
 export function PgaDistributionChart({ data, onScoreSelect }: PgaDistributionChartProps) {
   const pgaCounts = data.reduce((acc, trial) => {
-    const score = trial.pga.score;
+    const score = trial.globalAssessment.pgaScore; // Updated path
     acc[score] = (acc[score] || 0) + 1;
     return acc;
   }, {} as Record<number, number>);
 
   const chartData = Object.entries(pgaCounts)
     .map(([scoreStr, count]) => ({
-      scoreKey: `PGA ${scoreStr}`, // For XAxis display
-      originalScore: parseInt(scoreStr), // Actual numeric score
+      scoreKey: `PGA ${scoreStr}`, 
+      originalScore: parseInt(scoreStr),
       count,
     }))
     .sort((a, b) => a.originalScore - b.originalScore);
@@ -76,7 +76,7 @@ export function PgaDistributionChart({ data, onScoreSelect }: PgaDistributionCha
                 dataKey="count" 
                 fill="var(--color-count)" 
                 radius={4} 
-                onClick={(dataPoint) => {
+                onClick={(dataPoint: any) => { // Added type any for dataPoint from recharts
                   if (onScoreSelect && dataPoint && dataPoint.originalScore !== undefined) {
                     onScoreSelect(dataPoint.originalScore);
                   }
