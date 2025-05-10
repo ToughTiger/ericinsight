@@ -13,36 +13,37 @@ import {
 import { AppHeader } from '@/components/layout/header';
 
 interface AppShellProps {
-  sidebarContent: ReactNode;
+  sidebarContent: ReactNode | null; // Allow null to hide sidebar content
   children: ReactNode;
   sidebarFooterContent?: ReactNode;
 }
 
 export function AppShell({ sidebarContent, children, sidebarFooterContent }: AppShellProps) {
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={sidebarContent !== null}> {/* Open by default only if there's content */}
       <div className="min-h-screen flex flex-col bg-background">
-        <AppHeader />
+        <AppHeader showSidebarTrigger={sidebarContent !== null} /> {/* Show trigger only if there's sidebar content */}
         <div className="flex flex-1">
-          <Sidebar
-            variant="sidebar"
-            collapsible="icon"
-            className="border-r"
-          >
-            <SidebarHeader className="p-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-primary group-data-[collapsible=icon]:hidden">Filters</h2>
-              {/* SidebarTrigger is automatically handled by SidebarProvider for desktop/mobile */}
-            </SidebarHeader>
-            <SidebarContent className="p-4 group-data-[collapsible=icon]:p-2">
-              {sidebarContent}
-            </SidebarContent>
-            {sidebarFooterContent && (
-              <SidebarFooter className="p-4 mt-auto border-t group-data-[collapsible=icon]:hidden">
-                {sidebarFooterContent}
-              </SidebarFooter>
-            )}
-          </Sidebar>
-          <SidebarInset>
+          {sidebarContent && (
+            <Sidebar
+              variant="sidebar"
+              collapsible="icon"
+              className="border-r"
+            >
+              <SidebarHeader className="p-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary group-data-[collapsible=icon]:hidden">Filters</h2>
+              </SidebarHeader>
+              <SidebarContent className="p-4 group-data-[collapsible=icon]:p-2">
+                {sidebarContent}
+              </SidebarContent>
+              {sidebarFooterContent && (
+                <SidebarFooter className="p-4 mt-auto border-t group-data-[collapsible=icon]:hidden">
+                  {sidebarFooterContent}
+                </SidebarFooter>
+              )}
+            </Sidebar>
+          )}
+          <SidebarInset className={!sidebarContent ? "md:ml-0" : ""}> {/* Adjust margin if no sidebar */}
             <main className="flex-grow container mx-auto px-4 py-8 space-y-8">
               {children}
             </main>
@@ -55,3 +56,4 @@ export function AppShell({ sidebarContent, children, sidebarFooterContent }: App
     </SidebarProvider>
   );
 }
+

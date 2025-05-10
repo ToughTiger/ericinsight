@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { TrialData, TrialFilters, Gender } from '@/services/clinical-trials';
 import { 
   getTrialData as fetchTrialData, 
-  getPatientById,
+  // getPatientById, // No longer needed here
   getTrialCenterOptions,
   getGenderOptions,
   getAdverseEventOptions,
@@ -19,19 +19,18 @@ import { AppShell } from '@/components/layout/app-shell';
 import { FiltersPanel } from '@/components/dashboard/filters-panel';
 import { TrialDataTable } from '@/components/dashboard/trial-data-table';
 import { AiInsightsSummary } from '@/components/dashboard/ai-insights-summary';
-import { PatientDetailView } from '@/components/dashboard/patient-detail-view';
+// import { PatientDetailView } from '@/components/dashboard/patient-detail-view'; // Removed
 import { PgaDistributionChart } from '@/components/dashboard/charts/pga-distribution-chart';
 import { AdverseEventsChart } from '@/components/dashboard/charts/adverse-events-chart';
 import { GenderDistributionChart } from '@/components/dashboard/charts/gender-distribution-chart';
 import { DemographicsTable } from '@/components/dashboard/demographics-table';
 import { TreatmentDistributionChart } from '@/components/dashboard/charts/treatment-distribution-chart';
 import { AgeGroupDistributionChart } from '@/components/dashboard/charts/age-group-distribution-chart';
-// Future charts can be added here, e.g., VasTimelineChart, VitalSignsSummaryChart
 
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, PieChart, Users, Activity, Filter, LineChart, ShieldAlert } from 'lucide-react';
+import { BarChart, Users, Filter } from 'lucide-react';
 
 
 export default function DashboardPage() {
@@ -41,14 +40,14 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
-  const [selectedPatient, setSelectedPatient] = useState<TrialData | null>(null);
-  const [isPatientDetailOpen, setIsPatientDetailOpen] = useState(false);
-  const [patientAiSummary, setPatientAiSummary] = useState<string | null>(null);
-  const [isPatientSummaryLoading, setIsPatientSummaryLoading] = useState(false);
+  // Removed state related to PatientDetailView dialog
+  // const [selectedPatient, setSelectedPatient] = useState<TrialData | null>(null);
+  // const [isPatientDetailOpen, setIsPatientDetailOpen] = useState(false);
+  // const [patientAiSummary, setPatientAiSummary] = useState<string | null>(null);
+  // const [isPatientSummaryLoading, setIsPatientSummaryLoading] = useState(false);
 
   const { toast } = useToast();
 
-  // State for filter options
   const [availableTrialCenters, setAvailableTrialCenters] = useState<string[]>([]);
   const [availableGenders, setAvailableGenders] = useState<Gender[]>([]);
   const [availableAdverseEvents, setAvailableAdverseEvents] = useState<string[]>([]);
@@ -57,7 +56,6 @@ export default function DashboardPage() {
   const [availableAgeGroups, setAvailableAgeGroups] = useState<Array<'18-30' | '31-45' | '46-60' | '61+' | 'Unknown'>>([]);
 
   useEffect(() => {
-    // Fetch all filter options on initial load
     const fetchOptions = async () => {
       try {
         setAvailableTrialCenters(await getTrialCenterOptions());
@@ -93,8 +91,8 @@ export default function DashboardPage() {
 
   const applyFiltersAndSummarize = useCallback(async (newFilters?: TrialFilters) => {
     setIsLoading(true);
-    setAiSummary(null); // Clear previous summary
-    const currentFilters = newFilters ?? filters; // Use newFilters if provided (e.g., from chart click), else current state
+    setAiSummary(null); 
+    const currentFilters = newFilters ?? filters; 
 
     try {
       const data = await fetchTrialData(currentFilters);
@@ -107,7 +105,6 @@ export default function DashboardPage() {
         setAiSummary("No data matches the current filters. Try adjusting your filter criteria.");
       }
       
-      // Only show toast on explicit filter application or non-initial load
       if (!isInitialLoad || (newFilters && Object.keys(newFilters).length > 0)) {
         toast({
           title: "Filters Applied",
@@ -122,7 +119,7 @@ export default function DashboardPage() {
         description: "Failed to update data or AI summary. Please try again.",
         variant: "destructive",
       });
-      setTrialData([]); // Clear data on error
+      setTrialData([]); 
       setAiSummary("An error occurred while fetching data or generating insights.");
     } finally {
       setIsLoading(false);
@@ -132,39 +129,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if(isInitialLoad) { 
-        applyFiltersAndSummarize(); // Load initial data and summary
+        applyFiltersAndSummarize(); 
     }
   }, [isInitialLoad, applyFiltersAndSummarize]);
 
-
-  const handlePatientSelect = useCallback(async (patientId: string) => {
-    setIsPatientDetailOpen(true);
-    setSelectedPatient(null); 
-    setPatientAiSummary(null);
-    setIsPatientSummaryLoading(true);
-    try {
-      const patientData = await getPatientById(patientId);
-      if (patientData) {
-        setSelectedPatient(patientData);
-        const summaryOutput = await summarizeTrialInsights({ patientId, filters }); // Pass current dashboard filters for context
-        setPatientAiSummary(summaryOutput.summary);
-      } else {
-        toast({ title: "Error", description: "Patient data not found.", variant: "destructive" });
-        setIsPatientDetailOpen(false);
-      }
-    } catch (error) {
-      console.error("Error fetching patient details:", error);
-      toast({ title: "Error", description: "Failed to fetch patient details.", variant: "destructive" });
-      setIsPatientDetailOpen(false);
-    } finally {
-      setIsPatientSummaryLoading(false);
-    }
-  }, [toast, filters]); // Added filters to dependency array for patient summary context
-
+  // handlePatientSelect is removed as navigation will be handled by TrialDataTable
+  
   const handlePgaScoreSelect = useCallback((score: number) => {
     const newFilters = { ...filters, pgaScore: score };
-    setFilters(newFilters); // Update filter state
-    applyFiltersAndSummarize(newFilters); // Apply and re-summarize
+    setFilters(newFilters); 
+    applyFiltersAndSummarize(newFilters); 
   }, [filters, applyFiltersAndSummarize]);
 
   const handleTreatmentSelect = useCallback((treatment: 'Active Drug' | 'Placebo' | 'Comparator') => {
@@ -223,7 +197,6 @@ export default function DashboardPage() {
                 <GenderDistributionChart data={trialData} />
                 <TreatmentDistributionChart data={trialData} onTreatmentSelect={handleTreatmentSelect} />
                 <AgeGroupDistributionChart data={trialData} onAgeGroupSelect={handleAgeGroupSelect} />
-                {/* Add more charts as developed, e.g., VasTimelineChart, VitalSignsSummaryChart */}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">No data available to display charts. Apply filters to see visualizations.</p>
@@ -233,7 +206,6 @@ export default function DashboardPage() {
 
         <Separator />
         
-        {/* Combined Demographics and Baseline Characteristics Table */}
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center text-xl">
@@ -251,20 +223,12 @@ export default function DashboardPage() {
         <TrialDataTable 
           data={trialData} 
           isLoading={isLoading && isInitialLoad} 
-          onPatientSelect={handlePatientSelect} 
+          // onPatientSelect is no longer needed as the table handles navigation
           onPgaCellSelect={handlePgaScoreSelect}
         />
       </div>
 
-      {selectedPatient && (
-        <PatientDetailView
-          patient={selectedPatient}
-          aiSummary={patientAiSummary}
-          isLoadingSummary={isPatientSummaryLoading}
-          isOpen={isPatientDetailOpen}
-          onOpenChange={setIsPatientDetailOpen}
-        />
-      )}
+      {/* PatientDetailView dialog removed */}
     </AppShell>
   );
 }

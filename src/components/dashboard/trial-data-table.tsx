@@ -2,24 +2,25 @@
 "use client";
 
 import type { TrialData } from '@/services/clinical-trials';
+import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { List, UserSearch, CheckCircle, XCircle } from 'lucide-react'; // Updated icons
+import { List, UserSearch, CheckCircle, XCircle } from 'lucide-react';
 
 interface TrialDataTableProps {
   data: TrialData[];
   isLoading: boolean;
-  onPatientSelect: (patientId: string) => void;
   onPgaCellSelect?: (score: number) => void;
+  // onPatientSelect prop removed
 }
 
 const MAX_TABLE_HEIGHT = '400px';
 
-export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSelect }: TrialDataTableProps) {
+export function TrialDataTable({ data, isLoading, onPgaCellSelect }: TrialDataTableProps) {
   if (isLoading) {
     return (
       <Card className="shadow-lg">
@@ -104,7 +105,7 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
                   <TableCell>{trial.demographics.ageGroup}</TableCell>
                   <TableCell
                     onClick={() => onPgaCellSelect && onPgaCellSelect(trial.globalAssessment.pgaScore)}
-                    className={onPgaCellSelect ? 'cursor-pointer hover:bg-muted' : ''}
+                    className={onPgaCellSelect ? 'cursor-pointer hover:bg-primary/10 rounded' : ''}
                   >
                      <Badge variant="default" className="bg-accent text-accent-foreground">{trial.globalAssessment.pgaScore}</Badge>
                   </TableCell>
@@ -119,11 +120,12 @@ export function TrialDataTable({ data, isLoading, onPatientSelect, onPgaCellSele
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onPatientSelect(trial.patientId)}
-                      aria-label={`View details for patient ${trial.patientId}`}
+                      asChild // Use asChild to make Button act as a Link
                     >
-                      <UserSearch className="mr-2 h-4 w-4" />
-                      View
+                      <Link href={`/patient/${trial.patientId}`} aria-label={`View details for patient ${trial.patientId}`}>
+                        <UserSearch className="mr-2 h-4 w-4" />
+                        View
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>
