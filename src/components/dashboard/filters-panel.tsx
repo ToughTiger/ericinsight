@@ -10,7 +10,7 @@ import { Hospital, Users, AlertTriangle, ListChecks, RotateCcw, Stethoscope, Use
 interface FiltersPanelProps {
   filters: TrialFilters;
   onFilterChange: <K extends keyof TrialFilters>(key: K, value: TrialFilters[K] | undefined) => void;
-  onApplyFilters: () => void;
+  onApplyFilters: () => void; // This will now likely trigger query invalidation or refetch
   isLoading: boolean;
   trialCenters: string[];
   genders: Gender[];
@@ -40,7 +40,9 @@ export function FiltersPanel({
     (Object.keys(filters) as Array<keyof TrialFilters>).forEach(key => {
       onFilterChange(key, undefined);
     });
-    onApplyFilters(); // Re-apply (which will fetch all data)
+    // onApplyFilters(); // Call onApplyFilters after resetting to trigger refetch with no filters
+    // setTimeout is a workaround for state update race condition with react-query invalidation
+    setTimeout(() => onApplyFilters(), 0);
   };
   
   return (
