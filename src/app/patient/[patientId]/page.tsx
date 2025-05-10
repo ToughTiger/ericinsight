@@ -15,7 +15,7 @@ import { AppHeader } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, UserCircle } from 'lucide-react'; // Added UserCircle import
 import { Toaster } from '@/components/ui/toaster'; // Ensure Toaster is available for potential toasts
 
 const PatientDetailPage: NextPage = () => {
