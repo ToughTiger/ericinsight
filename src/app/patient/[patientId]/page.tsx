@@ -2,31 +2,38 @@
 "use client";
 
 import type { NextPage } from 'next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation'; // Correct hook for App Router
+import { useParams } from 'next/navigation'; 
 
-import type { TrialData } from '@/services/clinical-trials';
+import type { TrialData, VasDataPoint } from '@/services/clinical-trials';
 import { getPatientById } from '@/services/clinical-trials';
 import { summarizeTrialInsights } from '@/ai/flows/summarize-trial-insights';
 
+import { AppShell } from '@/components/layout/app-shell';
+import { PatientFiltersPanel, type PatientSpecificFilters } from '@/components/patient/patient-filters-panel';
 import { PatientView } from '@/components/patient/patient-view';
-import { AppHeader } from '@/components/layout/header';
+import { AppHeader } from '@/components/layout/header'; // Already imported, ensure it's used by AppShell
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, AlertTriangle, UserCircle } from 'lucide-react'; // Added UserCircle import
-import { Toaster } from '@/components/ui/toaster'; // Ensure Toaster is available for potential toasts
+import { ArrowLeft, AlertTriangle, UserCircle } from 'lucide-react';
+import { Toaster } from '@/components/ui/toaster';
 
 const PatientDetailPage: NextPage = () => {
-  const params = useParams(); // Get route parameters
-  const patientId = params?.patientId as string | undefined; // patientId can be string or string[]
+  const params = useParams(); 
+  const patientId = params?.patientId as string | undefined;
 
   const [patientData, setPatientData] = useState<TrialData | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [patientSpecificFilters, setPatientSpecificFilters] = useState<PatientSpecificFilters>({
+    vasTimePeriod: 'all',
+    // Potentially add other filters like aeSeverity here later
+  });
 
   useEffect(() => {
     if (patientId) {
@@ -38,7 +45,7 @@ const PatientDetailPage: NextPage = () => {
           const patient = await getPatientById(patientId);
           if (patient) {
             setPatientData(patient);
-            // Fetch AI summary after patient data is loaded
+            // Fetch AI summary for the entire patient record
             try {
                 const summaryOutput = await summarizeTrialInsights({ patientId });
                 setAiSummary(summaryOutput.summary);
@@ -66,6 +73,53 @@ const PatientDetailPage: NextPage = () => {
     }
   }, [patientId]);
 
+  const handlePatientFilterChange = useCallback(<K extends keyof PatientSpecificFilters>(key: K, value: PatientSpecificFilters[K]) => {
+    setPatientSpecificFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const processedPatientData = useMemo(() => {
+    if (!patientData) return null;
+
+    let filteredVasData = [...patientData.vasData]; // Start with all VAS data
+
+    if (patientSpecificFilters.vasTimePeriod !== 'all' && filteredVasData.length > 0) {
+      // Sort by day descending to easily get the latest data
+      const sortedVas = [...filteredVasData].sort((a, b) => b.day - a.day);
+      const maxDay = sortedVas[0]?.day;
+
+      if (maxDay !== undefined) {
+        let daysToInclude = 0;
+        if (patientSpecificFilters.vasTimePeriod === '7days') daysToInclude = 7;
+        else if (patientSpecificFilters.vasTimePeriod === '14days') daysToInclude = 14;
+        else if (patientSpecificFilters.vasTimePeriod === '30days') daysToInclude = 30;
+        
+        if (daysToInclude > 0) {
+            const cutoffDay = maxDay - daysToInclude +1; // +1 because day 0 is a day
+            filteredVasData = patientData.vasData.filter(vas => vas.day >= cutoffDay && vas.day <=maxDay);
+        }
+      }
+    }
+     // Sort by day ascending for the chart
+    filteredVasData.sort((a,b) => a.day - b.day);
+
+
+    return {
+      ...patientData,
+      vasData: filteredVasData,
+    };
+  }, [patientData, patientSpecificFilters]);
+
+
+  const sidebar = useMemo(() => (
+    <PatientFiltersPanel
+        filters={patientSpecificFilters}
+        onFilterChange={handlePatientFilterChange}
+        // onApplyFilters={() => {}} // Apply on change for simplicity, or add button
+        isLoading={isLoading}
+      />
+  ), [patientSpecificFilters, handlePatientFilterChange, isLoading]);
+
+
   const PageSkeleton = () => (
     <div className="space-y-6">
         <Skeleton className="h-10 w-1/4" /> {/* Back button placeholder */}
@@ -81,11 +135,9 @@ const PatientDetailPage: NextPage = () => {
     );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <AppHeader showSidebarTrigger={false} /> {/* No sidebar trigger on this page */}
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <AppShell sidebarContent={sidebar}>
         <Button variant="outline" asChild>
-          <Link href="/" className="inline-flex items-center">
+          <Link href="/" className="inline-flex items-center mb-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Link>
@@ -99,27 +151,23 @@ const PatientDetailPage: NextPage = () => {
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        ) : patientData ? (
+        ) : processedPatientData ? (
           <>
-            <h1 className="text-3xl font-bold text-primary flex items-center">
+            <h1 className="text-3xl font-bold text-primary flex items-center mb-6">
               <UserCircle className="mr-3 h-10 w-10" />
-              Patient Details: {patientData.patientId}
+              Patient Details: {processedPatientData.patientId}
             </h1>
             <PatientView 
-                patient={patientData} 
-                aiSummary={aiSummary}
+                patient={processedPatientData} 
+                aiSummary={aiSummary} // AI summary is for the whole patient
                 isLoadingAiSummary={isAiSummaryLoading} 
             />
           </>
         ) : (
             <p className="text-muted-foreground text-center py-10">Patient data could not be loaded.</p>
         )}
-      </main>
-      <footer className="bg-secondary text-secondary-foreground py-4 text-center text-sm">
-        <p>&copy; {new Date().getFullYear()} Trial Insights. All rights reserved.</p>
-      </footer>
-      <Toaster /> {/* Add Toaster here if any child components might use toast */}
-    </div>
+      <Toaster />
+    </AppShell>
   );
 };
 

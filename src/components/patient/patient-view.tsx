@@ -11,10 +11,10 @@ import {
   HeartPulse, CalendarDays, CheckCircle, XCircle, LineChartIcon
 } from 'lucide-react';
 import { SectionCard } from '@/components/layout/section-card';
-import { VasTimelineChart } from '@/components/patient/charts/vas-timeline-chart'; // New chart
+import { VasTimelineChart } from '@/components/patient/charts/vas-timeline-chart'; 
 
 interface PatientViewProps {
-  patient: TrialData;
+  patient: TrialData; // This will be the processedPatientData with potentially filtered vasData
   aiSummary: string | null;
   isLoadingAiSummary: boolean;
 }
@@ -85,7 +85,7 @@ export function PatientView({ patient, aiSummary, isLoadingAiSummary }: PatientV
 
       <SectionCard title="Adverse Events" icon={<Activity />} contentClassName="max-h-96">
         {patient.aeData.length > 0 ? (
-          <ScrollArea className="max-h-80"> {/* Added ScrollArea here */}
+          <ScrollArea className="max-h-80"> 
            <Table>
               <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow>
@@ -110,6 +110,7 @@ export function PatientView({ patient, aiSummary, isLoadingAiSummary }: PatientV
         )}
       </SectionCard>
       
+      {/* VasTimelineChart will now display patient.vasData which could be filtered by the page */}
       <SectionCard title="VAS Data (Pain Score)" icon={<LineChartIcon />}>
           <VasTimelineChart vasData={patient.vasData} />
       </SectionCard>
