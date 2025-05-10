@@ -18,6 +18,7 @@ import {
   Lightbulb, UserCircle, FlaskConical, Users, ShieldCheck, Activity, Stethoscope, 
   ClipboardList, LineChartIcon, Thermometer, HeartPulse, Wind, CalendarDays, CheckCircle, XCircle
 } from 'lucide-react';
+import { cn } from "@/lib/utils"; // Added import for cn
 
 interface PatientDetailViewProps {
   patient: TrialData | null;
@@ -177,3 +178,4 @@ export function PatientDetailView({
     </Dialog>
   );
 }
+
