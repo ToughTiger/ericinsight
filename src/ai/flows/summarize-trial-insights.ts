@@ -93,6 +93,7 @@ const TrialFiltersSchema = z.object({
 const SummarizeTrialInsightsInputSchema = z.object({
   filters: z.optional(TrialFiltersSchema).describe('The filters to apply to the trial data. Used if patientId is not provided, or for context if patientId is provided.'),
   patientId: z.string().optional().describe('The ID of a specific patient to summarize. If provided, filters are primarily used for context if needed, and patient data is fetched directly.'),
+  studyId: z.string().nullable().optional().describe('The ID of the current study. Used for context if AI logic needs to adapt per study.'),
 });
 export type SummarizeTrialInsightsInput = z.infer<typeof SummarizeTrialInsightsInputSchema>;
 
@@ -109,7 +110,8 @@ export async function summarizeTrialInsights(input: SummarizeTrialInsightsInput)
 const PromptInputSchema = z.object({
     patientData: z.string().optional().describe("JSON string of a single patient's full data record. Provided if summarizing a specific patient."),
     filteredTrialData: z.string().optional().describe("JSON string of filtered trial data (array of full patient records). Provided if summarizing a dataset based on filters."),
-    filtersApplied: z.string().describe("Description of filters applied, or 'No filters applied' or 'Summarizing specific patient [ID] with contextual filters: [filters JSON]'.")
+    filtersApplied: z.string().describe("Description of filters applied, or 'No filters applied' or 'Summarizing specific patient [ID] with contextual filters: [filters JSON]'."),
+    studyContext: z.string().optional().describe("Context about the current study, if available (e.g., Study ID)."),
 });
 
 
@@ -119,6 +121,9 @@ const summarizeTrialInsightsPrompt = ai.definePrompt({
   output: {schema: SummarizeTrialInsightsOutputSchema},
   prompt: `You are an AI assistant specializing in summarizing clinical trial data.
   Your summary should be concise and highlight key findings.
+  {{#if studyContext}}
+  Current Study Context: {{{studyContext}}}
+  {{/if}}
 
   {{#if patientData}}
   Based on the following specific patient data, provide a summary.
@@ -156,10 +161,13 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
         filtersApplied: "No specific context provided."
     };
 
+    if (input.studyId) {
+        promptPayload.studyContext = `Study ID: ${input.studyId}`;
+    }
+
     if (input.patientId) {
-      const patient = await getPatientById(input.patientId);
+      const patient = await getPatientById(input.patientId); // Potentially pass studyId here if getPatientById needs it
       if (patient) {
-        // Serialize the whole patient object according to TrialData structure
         promptPayload.patientData = JSON.stringify(patient, null, 2);
         let patientContext = `Summarizing specific patient: ${input.patientId}.`;
         if (input.filters && Object.keys(input.filters).length > 0) {
@@ -173,10 +181,9 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
         return { summary: "Error: Patient not found." };
       }
     } else {
-      const trialData: TrialData[] = await getTrialData(input.filters ?? {});
-      // Limit data sent to prompt if too large to avoid issues, summarize first few records
-      const dataForPrompt = trialData.length > 10 ? trialData.slice(0, 10) : trialData; // Reduced sample size
-      // Serialize an array of patient objects
+      // Potentially pass studyId to getTrialData if it's used for data scoping
+      const trialData: TrialData[] = await getTrialData(input.filters ?? {}); 
+      const dataForPrompt = trialData.length > 10 ? trialData.slice(0, 10) : trialData;
       promptPayload.filteredTrialData = JSON.stringify(dataForPrompt, null, 2);
       
       let filterDescriptions = "Filters Applied to Dataset:\n";
@@ -188,10 +195,10 @@ const summarizeTrialInsightsFlow = ai.defineFlow(
         if (activeFilters) {
             filterDescriptions += activeFilters;
         } else {
-            filterDescriptions = "No filters applied. Summarizing entire dataset.\n";
+            filterDescriptions = "No filters applied. Summarizing dataset for the current study.\n";
         }
       } else {
-        filterDescriptions = "No filters applied. Summarizing entire dataset.\n";
+        filterDescriptions = "No filters applied. Summarizing dataset for the current study.\n";
       }
       promptPayload.filtersApplied = filterDescriptions;
     }

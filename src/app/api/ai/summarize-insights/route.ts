@@ -5,7 +5,8 @@ import { summarizeTrialInsights, type SummarizeTrialInsightsInput, type Summariz
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as SummarizeTrialInsightsInput;
+    const body = await request.json() as SummarizeTrialInsightsInput; // Body now includes optional studyId
+    // The summarizeTrialInsights function already expects SummarizeTrialInsightsInput which includes studyId
     const summaryOutput: SummarizeTrialInsightsOutput = await summarizeTrialInsights(body);
     return NextResponse.json(summaryOutput);
   } catch (error) {
